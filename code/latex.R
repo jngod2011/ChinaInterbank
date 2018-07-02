@@ -6,6 +6,46 @@
 # preparation
 #################################################################
 bank10.abbr <- c("SOBC", "SOICBC", "SOCCB", "SOBOC", "JEPF", "JEHB", "JECM", "JECI", "JECITIC", "URBJ")
+n.sp <- bank10.abbr
+n.g.sp <- paste0(n.sp,".g")
+n.bond <- c("TRCHZ12", "TRCHZ15", "TRCHZ20", "TRCHZ25", "TRCHZ2Y", "TRCHZ30", "TRCHZ3Y", "TRCHZ4Y", "TRCHZ5Y", "TRCHZ6Y", "TRCHZ7Y", "TRCHZ8Y", "TRCHZ9Y", "TRCHZ10", "TRCHZ1Y")
+n.is.higher <- c("O.N","X1W","X2W","X1M","X3M","X6M","X9M","sum","crisis.sma20","crisis")
+n.all.bid.ON <- paste0(bank10.abbr,".ON")
+n.all.bid.W1 <- paste0(bank10.abbr,".W1")
+n.all.bid.W2 <- paste0(bank10.abbr,".W2")
+n.all.bid.M1 <- paste0(bank10.abbr,".M1")
+n.all.bid.M3 <- paste0(bank10.abbr,".M3")
+n.all.bid.M6 <- paste0(bank10.abbr,".M6")
+n.all.bid.M9 <- paste0(bank10.abbr,".M9")
+n.all.bid.Y1 <- paste0(bank10.abbr,".Y1")
+data <- read.csv(file = "data/bank10/ForestData.csv")
+data <- xts(data[,-1], as.Date(data[,1], format='%Y-%m-%d'))
+Date <- index(data) %>% as.character
+
+is.higher <- data[,n.is.higher]
+g.sp <- data[,n.g.sp]
+sp <- data[,n.sp]
+bond <- data[,n.bond]
+all.bid.ON <- data[,n.all.bid.ON]
+all.bid.W1 <- data[,n.all.bid.W1]
+all.bid.W2 <- data[,n.all.bid.W2]
+all.bid.M1 <- data[,n.all.bid.M1]
+all.bid.M3 <- data[,n.all.bid.M3]
+all.bid.M6 <- data[,n.all.bid.M6]
+all.bid.M9 <- data[,n.all.bid.M9]
+all.bid.Y1 <- data[,n.all.bid.Y1]
+#################################################################
+# load sp group
+#################################################################
+group.stockprice <- read_excel(path = "data/stockprice.xlsx",
+                               sheet = "group",
+                               skip = 0,
+                               col_names = T,
+                               col_types = rep("text", 5)) %>% as.data.frame
+group.stockprice$Eclass <- factor(group.stockprice$Eclass, order = TRUE, levels = c("State-Owned Banks","Joint-Equity Commercial Banks","Urban Commercial Banks", "Rural Commercial Banks"))
+group.stockprice <- group.stockprice[order(group.stockprice$Eclass,decreasing = F),] 
+rownames(group.stockprice) <- group.stockprice$Abbr
+group.stockprice$color <- c(colorRampPalette(c("#B71C1C", "white"))(6)[-6], colorRampPalette(c("#FF9800", "white"))(10)[-10], colorRampPalette(c("#33691E", "white"))(7)[-7],colorRampPalette(c("#1A237E", "white"))(6)[-6])
 #################################################################
 # dygraph for SHIBOR
 #################################################################
@@ -350,32 +390,6 @@ print(summary.wind,
 )
 
 #################################################################
-# load sp
-#################################################################
-group.stockprice <- read_excel(path = "data/stockprice.xlsx",
-                               sheet = "group",
-                               skip = 0,
-                               col_names = T,
-                               col_types = rep("text", 5)) %>% as.data.frame
-group.stockprice$Eclass <- factor(group.stockprice$Eclass, order = TRUE, levels = c("State-Owned Banks","Joint-Equity Commercial Banks","Urban Commercial Banks", "Rural Commercial Banks"))
-group.stockprice <- group.stockprice[order(group.stockprice$Eclass,decreasing = F),] 
-rownames(group.stockprice) <- group.stockprice$Abbr
-group.stockprice$color <- c(colorRampPalette(c("#B71C1C", "white"))(6)[-6], colorRampPalette(c("#FF9800", "white"))(10)[-10], colorRampPalette(c("#33691E", "white"))(7)[-7],colorRampPalette(c("#1A237E", "white"))(6)[-6])
-
-raw.stockprice <- read_excel(path = "data/stockprice.xlsx",
-                             sheet = 1,
-                             skip = 4,
-                             col_names = F,
-                             col_types = c("date", rep("numeric", 25))) %>% as.data.frame
-sp <- raw.stockprice[,c(1, 18, 19, 20, 22, 23, 2, 6, 7, 8, 9, 15, 17, 21, 25, 3, 11, 12, 13, 16, 24, 4, 5, 10, 14, 26)]
-names(sp) <- c("Date", group.stockprice$Abbr)
-sp <- sp[sp$Date >="2007-12-31", ]
-sp <- sp[, !is.na(sp[1,])]
-sp <- sp[,c("Date", bank10.abbr)]
-g.sp <- as.data.frame(lapply(sp[,-1], log_GrowthRate))
-d.sp <- sp[-1,-1]-sp[-ncol(sp),-1]
-sp <- xts(sp[,-1], as.Date(sp$Date, format='%Y-%m-%d'))["2008-01-01/"]
-#################################################################
 # g.sp data description
 #################################################################
 names(g.sp) <- bank10.abbr
@@ -573,7 +587,8 @@ daily.var.gir2 <- dy.VAR.GIR(data = g.sp, n.ahead = 2, mode = "fix", span = 250)
 daily.var.gir3 <- dy.VAR.GIR(data = g.sp, n.ahead = 3, mode = "fix", span = 250)[[1]]
 daily.var.gir4 <- dy.VAR.GIR(data = g.sp, n.ahead = 4, mode = "fix", span = 250)[[1]]
 daily.var.gir5 <- dy.VAR.GIR(data = g.sp, n.ahead = 5, mode = "fix", span = 250)[[1]]
-
+#save(daily.var.gir0, daily.var.gir1, daily.var.gir2, daily.var.gir3, daily.var.gir4, daily.var.gir5, g.sp, file = "data/Rdata/latex_daily.var.gir.Rdata")
+load(file = "data/Rdata/latex_daily.var.gir.Rdata")
 index <- c()
 for (i in 1:length(daily.var.gir0)) {
   GIR <- array(c(daily.var.gir0[[i]],

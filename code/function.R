@@ -949,7 +949,6 @@ dyCoefErgm.yearly <- function(data, set,
   if(missing(triangle)){triangle <- "all"} # c("lower","upper")
   if(missing(directed)){directed <- TRUE} # TRUE FALSE
   
-  
   total <- length(data)
   p.ergm.l <- c()
   max.l <- c()
@@ -1164,231 +1163,231 @@ dyCoefErgm.yearly <- function(data, set,
       }
       
       if(!is.null(BidType)){
-      if(BidType == "aenet"){
-        if(!is.na(match("ON",inclusion.edgecov))){
-          temp.ON <- aenet.myl.ON[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.ON <- apply(temp.ON, c(1,2), round);
-          diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0
-          if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
+        if(BidType == "aenet"){
+          if(!is.na(match("ON",inclusion.edgecov))){
+            temp.ON <- aenet.myl.ON[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.ON <- apply(temp.ON, c(1,2), round);
+            diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0
+            if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
+          }
+          if(!is.na(match("W1",inclusion.edgecov))){
+            temp.W1 <- aenet.myl.W1[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.W1 <- apply(temp.W1, c(1,2), round);
+            diag(temp.W1) <- 0;temp.W1[is.na(temp.W1)] <- 0
+            if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
+          }
+          if(!is.na(match("W2",inclusion.edgecov))){
+            temp.W2 <- aenet.myl.W2[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.W2 <- apply(temp.W2, c(1,2), round);
+            diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0
+            if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
+          }
+          if(!is.na(match("M1",inclusion.edgecov))){
+            temp.M1 <- aenet.myl.M1[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.M1 <- apply(temp.M1, c(1,2), round);
+            diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0
+            if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
+          }
+          if(!is.na(match("M3",inclusion.edgecov))){
+            temp.M3 <- aenet.myl.M3[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.M3 <- apply(temp.M3, c(1,2), round);
+            diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0
+            if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
+          }
+          if(!is.na(match("M6",inclusion.edgecov))){
+            temp.M6 <- aenet.myl.M6[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.M6 <- apply(temp.M6, c(1,2), round);
+            diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0
+            if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
+          }
+          if(!is.na(match("M9",inclusion.edgecov))){
+            temp.M9 <- aenet.myl.M9[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.M9 <- apply(temp.M9, c(1,2), round);
+            diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0
+            if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
+          }
+          if(!is.na(match("Y1",inclusion.edgecov))){
+            temp.Y1 <- aenet.myl.Y1[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.Y1 <- apply(temp.Y1, c(1,2), round);
+            diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0
+            if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
+          }
+          if(!is.na(match("short",inclusion.edgecov))){
+            temp.short <- aenet.myl.short[[i]][1:nnode,1:nnode] * (10^scale) ;
+            diag(temp.short) <- 0;temp.short[is.na(temp.short)] <- 0
+            if(!is.na(match("short",trans))){temp.short <- t(temp.short)}
+          }
+          if(!is.na(match("long",inclusion.edgecov))){
+            temp.long <- aenet.myl.long[[i]][1:nnode,1:nnode] * (10^scale) ;
+            diag(temp.long) <- 0;temp.long[is.na(temp.long)] <- 0
+            if(!is.na(match("long",trans))){temp.long <- t(temp.long)}
+          }
         }
-        if(!is.na(match("W1",inclusion.edgecov))){
-          temp.W1 <- aenet.myl.W1[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.W1 <- apply(temp.W1, c(1,2), round);
-          diag(temp.W1) <- 0;temp.W1[is.na(temp.W1)] <- 0
-          if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
+        if(BidType == "vecm.gir"){
+          
+          if(!is.na(match("ON",inclusion.edgecov))){
+            temp.ON <- vecm.gir.myl.ON[[i]] * (10^scale) ;#temp.ON <- apply(temp.ON, c(1,2), round);
+            diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0; temp.ON <- abs(temp.ON)
+            if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
+          }
+          if(!is.na(match("W1",inclusion.edgecov))){
+            temp.W1 <- vecm.gir.myl.W1[[i]] * (10^scale) ;#temp.W1 <- apply(temp.W1, c(1,2), round);
+            diag(temp.W1) <- 0;temp.W1[is.na(temp.W1)] <- 0; temp.W1 <- abs(temp.W1)
+            if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
+          }
+          if(!is.na(match("W2",inclusion.edgecov))){
+            temp.W2 <- vecm.gir.myl.W2[[i]] * (10^scale) ;#temp.W2 <- apply(temp.W2, c(1,2), round);
+            diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0; temp.W2 <- abs(temp.W2)
+            if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
+          }
+          if(!is.na(match("M1",inclusion.edgecov))){
+            temp.M1 <- vecm.gir.myl.M1[[i]] * (10^scale) ;#temp.M1 <- apply(temp.M1, c(1,2), round);
+            diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0; temp.M1 <- abs(temp.M1)
+            if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
+          }
+          if(!is.na(match("M3",inclusion.edgecov))){
+            temp.M3 <- vecm.gir.myl.M3[[i]] * (10^scale) ;#temp.M3 <- apply(temp.M3, c(1,2), round);
+            diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0; temp.M3 <- abs(temp.M3)
+            if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
+          }
+          if(!is.na(match("M6",inclusion.edgecov))){
+            temp.M6 <- vecm.gir.myl.M6[[i]] * (10^scale) ;#temp.M6 <- apply(temp.M6, c(1,2), round);
+            diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0; temp.M6 <- abs(temp.M6)
+            if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
+          }
+          if(!is.na(match("M9",inclusion.edgecov))){
+            temp.M9 <- vecm.gir.myl.M9[[i]] * (10^scale) ;#temp.M9 <- apply(temp.M9, c(1,2), round);
+            diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0; temp.M9 <- abs(temp.M9)
+            if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
+          }
+          if(!is.na(match("Y1",inclusion.edgecov))){
+            temp.Y1 <- vecm.gir.myl.Y1[[i]] * (10^scale) ;#temp.Y1 <- apply(temp.Y1, c(1,2), round);
+            diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0; temp.Y1 <- abs(temp.Y1)
+            if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
+          }
         }
-        if(!is.na(match("W2",inclusion.edgecov))){
-          temp.W2 <- aenet.myl.W2[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.W2 <- apply(temp.W2, c(1,2), round);
-          diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0
-          if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
+        if(BidType == "vecm.fevd"){
+          
+          if(!is.na(match("ON",inclusion.edgecov))){
+            temp.ON <- vecm.fevd.myl.ON[[i]] * (10^scale) ;#temp.ON <- apply(temp.ON, c(1,2), round);
+            diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0
+            if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
+          }
+          if(!is.na(match("W1",inclusion.edgecov))){
+            temp.W1 <- vecm.fevd.myl.W1[[i]] * (10^scale) ;#temp.W1 <- apply(temp.W1, c(1,2), round);
+            diag(temp.W1) <- 0;temp.W1[is.na(temp.W1)] <- 0
+            if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
+          }
+          if(!is.na(match("W2",inclusion.edgecov))){
+            temp.W2 <- vecm.fevd.myl.W2[[i]] * (10^scale) ;#temp.W2 <- apply(temp.W2, c(1,2), round);
+            diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0
+            if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
+          }
+          if(!is.na(match("M1",inclusion.edgecov))){
+            temp.M1 <- vecm.fevd.myl.M1[[i]] * (10^scale) ;#temp.M1 <- apply(temp.M1, c(1,2), round);
+            diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0
+            if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
+          }
+          if(!is.na(match("M3",inclusion.edgecov))){
+            temp.M3 <- vecm.fevd.myl.M3[[i]] * (10^scale) ;#temp.M3 <- apply(temp.M3, c(1,2), round);
+            diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0
+            if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
+          }
+          if(!is.na(match("M6",inclusion.edgecov))){
+            temp.M6 <- vecm.fevd.myl.M6[[i]] * (10^scale) ;#temp.M6 <- apply(temp.M6, c(1,2), round);
+            diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0
+            if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
+          }
+          if(!is.na(match("M9",inclusion.edgecov))){
+            temp.M9 <- vecm.fevd.myl.M9[[i]] * (10^scale) ;#temp.M9 <- apply(temp.M9, c(1,2), round);
+            diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0
+            if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
+          }
+          if(!is.na(match("Y1",inclusion.edgecov))){
+            temp.Y1 <- vecm.fevd.myl.Y1[[i]] * (10^scale) ;#temp.Y1 <- apply(temp.Y1, c(1,2), round);
+            diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0
+            if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
+          }
         }
-        if(!is.na(match("M1",inclusion.edgecov))){
-          temp.M1 <- aenet.myl.M1[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.M1 <- apply(temp.M1, c(1,2), round);
-          diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0
-          if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
+        if(BidType == "var.gir"){
+          
+          if(!is.na(match("ON",inclusion.edgecov))){
+            temp.ON <- var.gir.myl.ON[[i]] * (10^scale) ;#temp.ON <- apply(temp.ON, c(1,2), round);
+            diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0;#temp.ON <- abs(temp.ON)
+            if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
+          }
+          if(!is.na(match("W1",inclusion.edgecov))){
+            temp.W1 <- var.gir.myl.W1[[i]] * (10^scale);#temp.W1 <- apply(temp.W1, c(1,2), round);
+            diag(temp.W1) <- 0;#temp.W1[is.na(temp.W1)] <- 0;temp.W1 <- abs(temp.W1)
+            if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
+          }
+          if(!is.na(match("W2",inclusion.edgecov))){
+            temp.W2 <- var.gir.myl.W2[[i]] * (10^scale);#temp.W2 <- apply(temp.W2, c(1,2), round);
+            diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0;temp.W2 <- abs(temp.W2)
+            if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
+          }
+          if(!is.na(match("M1",inclusion.edgecov))){
+            temp.M1 <- var.gir.myl.M1[[i]] * (10^scale);#temp.M1 <- apply(temp.M1, c(1,2), round);
+            diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0;temp.M1 <- abs(temp.M1)
+            if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
+          }
+          if(!is.na(match("M3",inclusion.edgecov))){
+            temp.M3 <- var.gir.myl.M3[[i]] * (10^scale);#temp.M3 <- apply(temp.M3, c(1,2), round);
+            diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0;temp.M3 <- abs(temp.M3)
+            if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
+          }
+          if(!is.na(match("M6",inclusion.edgecov))){
+            temp.M6 <- var.gir.myl.M6[[i]] * (10^scale);#temp.M6 <- apply(temp.M6, c(1,2), round);
+            diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0;temp.M6 <- abs(temp.M6)
+            if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
+          }
+          if(!is.na(match("M9",inclusion.edgecov))){
+            temp.M9 <- var.gir.myl.M9[[i]] * (10^scale);#temp.M9 <- apply(temp.M9, c(1,2), round);
+            diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0;temp.M9 <- abs(temp.M9)
+            if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
+          }
+          if(!is.na(match("Y1",inclusion.edgecov))){
+            temp.Y1 <- var.gir.myl.Y1[[i]] * (10^scale);#temp.Y1 <- apply(temp.Y1, c(1,2), round);
+            diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0;temp.Y1 <- abs(temp.Y1)
+            if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
+          }
         }
-        if(!is.na(match("M3",inclusion.edgecov))){
-          temp.M3 <- aenet.myl.M3[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.M3 <- apply(temp.M3, c(1,2), round);
-          diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0
-          if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
-        }
-        if(!is.na(match("M6",inclusion.edgecov))){
-          temp.M6 <- aenet.myl.M6[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.M6 <- apply(temp.M6, c(1,2), round);
-          diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0
-          if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
-        }
-        if(!is.na(match("M9",inclusion.edgecov))){
-          temp.M9 <- aenet.myl.M9[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.M9 <- apply(temp.M9, c(1,2), round);
-          diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0
-          if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
-        }
-        if(!is.na(match("Y1",inclusion.edgecov))){
-          temp.Y1 <- aenet.myl.Y1[[i]][1:nnode,1:nnode] * (10^scale) ;#temp.Y1 <- apply(temp.Y1, c(1,2), round);
-          diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0
-          if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
-        }
-        if(!is.na(match("short",inclusion.edgecov))){
-          temp.short <- aenet.myl.short[[i]][1:nnode,1:nnode] * (10^scale) ;
-          diag(temp.short) <- 0;temp.short[is.na(temp.short)] <- 0
-          if(!is.na(match("short",trans))){temp.short <- t(temp.short)}
-        }
-        if(!is.na(match("long",inclusion.edgecov))){
-          temp.long <- aenet.myl.long[[i]][1:nnode,1:nnode] * (10^scale) ;
-          diag(temp.long) <- 0;temp.long[is.na(temp.long)] <- 0
-          if(!is.na(match("long",trans))){temp.long <- t(temp.long)}
+        if(BidType == "var.fevd"){
+          
+          if(!is.na(match("ON",inclusion.edgecov))){
+            temp.ON <- var.fevd.myl.ON[[i]] * (10^scale);#temp.ON <- apply(temp.ON, c(1,2), round);
+            diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0
+            if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
+          }
+          if(!is.na(match("W1",inclusion.edgecov))){
+            temp.W1 <- var.fevd.myl.W1[[i]] * (10^scale);#temp.W1 <- apply(temp.W1, c(1,2), round);
+            diag(temp.W1) <- 0;temp.W1[is.na(temp.W1)] <- 0
+            if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
+          }
+          if(!is.na(match("W2",inclusion.edgecov))){
+            temp.W2 <- var.fevd.myl.W2[[i]]  * (10^scale);#temp.W2 <- apply(temp.W2, c(1,2), round);
+            diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0
+            if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
+          }
+          if(!is.na(match("M1",inclusion.edgecov))){
+            temp.M1 <- var.fevd.myl.M1[[i]]  * (10^scale);#temp.M1 <- apply(temp.M1, c(1,2), round);
+            diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0
+            if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
+          }
+          if(!is.na(match("M3",inclusion.edgecov))){
+            temp.M3 <- var.fevd.myl.M3[[i]] * (10^scale) ;#temp.M3 <- apply(temp.M3, c(1,2), round);
+            diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0
+            if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
+          }
+          if(!is.na(match("M6",inclusion.edgecov))){
+            temp.M6 <- var.fevd.myl.M6[[i]] * (10^scale) ;#temp.M6 <- apply(temp.M6, c(1,2), round);
+            diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0
+            if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
+          }
+          if(!is.na(match("M9",inclusion.edgecov))){
+            temp.M9 <- var.fevd.myl.M9[[i]] * (10^scale) ;#temp.M9 <- apply(temp.M9, c(1,2), round);
+            diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0
+            if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
+          }
+          if(!is.na(match("Y1",inclusion.edgecov))){
+            temp.Y1 <- var.fevd.myl.Y1[[i]] * (10^scale) ;#temp.Y1 <- apply(temp.Y1, c(1,2), round);
+            diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0
+            if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
+          }
         }
       }
-      if(BidType == "vecm.gir"){
-        
-        if(!is.na(match("ON",inclusion.edgecov))){
-          temp.ON <- vecm.gir.myl.ON[[i]] * (10^scale) ;#temp.ON <- apply(temp.ON, c(1,2), round);
-          diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0; temp.ON <- abs(temp.ON)
-          if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
-        }
-        if(!is.na(match("W1",inclusion.edgecov))){
-          temp.W1 <- vecm.gir.myl.W1[[i]] * (10^scale) ;#temp.W1 <- apply(temp.W1, c(1,2), round);
-          diag(temp.W1) <- 0;temp.W1[is.na(temp.W1)] <- 0; temp.W1 <- abs(temp.W1)
-          if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
-        }
-        if(!is.na(match("W2",inclusion.edgecov))){
-          temp.W2 <- vecm.gir.myl.W2[[i]] * (10^scale) ;#temp.W2 <- apply(temp.W2, c(1,2), round);
-          diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0; temp.W2 <- abs(temp.W2)
-          if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
-        }
-        if(!is.na(match("M1",inclusion.edgecov))){
-          temp.M1 <- vecm.gir.myl.M1[[i]] * (10^scale) ;#temp.M1 <- apply(temp.M1, c(1,2), round);
-          diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0; temp.M1 <- abs(temp.M1)
-          if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
-        }
-        if(!is.na(match("M3",inclusion.edgecov))){
-          temp.M3 <- vecm.gir.myl.M3[[i]] * (10^scale) ;#temp.M3 <- apply(temp.M3, c(1,2), round);
-          diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0; temp.M3 <- abs(temp.M3)
-          if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
-        }
-        if(!is.na(match("M6",inclusion.edgecov))){
-          temp.M6 <- vecm.gir.myl.M6[[i]] * (10^scale) ;#temp.M6 <- apply(temp.M6, c(1,2), round);
-          diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0; temp.M6 <- abs(temp.M6)
-          if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
-        }
-        if(!is.na(match("M9",inclusion.edgecov))){
-          temp.M9 <- vecm.gir.myl.M9[[i]] * (10^scale) ;#temp.M9 <- apply(temp.M9, c(1,2), round);
-          diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0; temp.M9 <- abs(temp.M9)
-          if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
-        }
-        if(!is.na(match("Y1",inclusion.edgecov))){
-          temp.Y1 <- vecm.gir.myl.Y1[[i]] * (10^scale) ;#temp.Y1 <- apply(temp.Y1, c(1,2), round);
-          diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0; temp.Y1 <- abs(temp.Y1)
-          if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
-        }
-      }
-      if(BidType == "vecm.fevd"){
-        
-        if(!is.na(match("ON",inclusion.edgecov))){
-          temp.ON <- vecm.fevd.myl.ON[[i]] * (10^scale) ;#temp.ON <- apply(temp.ON, c(1,2), round);
-          diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0
-          if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
-        }
-        if(!is.na(match("W1",inclusion.edgecov))){
-          temp.W1 <- vecm.fevd.myl.W1[[i]] * (10^scale) ;#temp.W1 <- apply(temp.W1, c(1,2), round);
-          diag(temp.W1) <- 0;temp.W1[is.na(temp.W1)] <- 0
-          if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
-        }
-        if(!is.na(match("W2",inclusion.edgecov))){
-          temp.W2 <- vecm.fevd.myl.W2[[i]] * (10^scale) ;#temp.W2 <- apply(temp.W2, c(1,2), round);
-          diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0
-          if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
-        }
-        if(!is.na(match("M1",inclusion.edgecov))){
-          temp.M1 <- vecm.fevd.myl.M1[[i]] * (10^scale) ;#temp.M1 <- apply(temp.M1, c(1,2), round);
-          diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0
-          if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
-        }
-        if(!is.na(match("M3",inclusion.edgecov))){
-          temp.M3 <- vecm.fevd.myl.M3[[i]] * (10^scale) ;#temp.M3 <- apply(temp.M3, c(1,2), round);
-          diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0
-          if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
-        }
-        if(!is.na(match("M6",inclusion.edgecov))){
-          temp.M6 <- vecm.fevd.myl.M6[[i]] * (10^scale) ;#temp.M6 <- apply(temp.M6, c(1,2), round);
-          diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0
-          if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
-        }
-        if(!is.na(match("M9",inclusion.edgecov))){
-          temp.M9 <- vecm.fevd.myl.M9[[i]] * (10^scale) ;#temp.M9 <- apply(temp.M9, c(1,2), round);
-          diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0
-          if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
-        }
-        if(!is.na(match("Y1",inclusion.edgecov))){
-          temp.Y1 <- vecm.fevd.myl.Y1[[i]] * (10^scale) ;#temp.Y1 <- apply(temp.Y1, c(1,2), round);
-          diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0
-          if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
-        }
-      }
-      if(BidType == "var.gir"){
-        
-        if(!is.na(match("ON",inclusion.edgecov))){
-          temp.ON <- var.gir.myl.ON[[i]] * (10^scale) ;#temp.ON <- apply(temp.ON, c(1,2), round);
-          diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0;#temp.ON <- abs(temp.ON)
-          if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
-        }
-        if(!is.na(match("W1",inclusion.edgecov))){
-          temp.W1 <- var.gir.myl.W1[[i]] * (10^scale);#temp.W1 <- apply(temp.W1, c(1,2), round);
-          diag(temp.W1) <- 0;#temp.W1[is.na(temp.W1)] <- 0;temp.W1 <- abs(temp.W1)
-          if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
-        }
-        if(!is.na(match("W2",inclusion.edgecov))){
-          temp.W2 <- var.gir.myl.W2[[i]] * (10^scale);#temp.W2 <- apply(temp.W2, c(1,2), round);
-          diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0;temp.W2 <- abs(temp.W2)
-          if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
-        }
-        if(!is.na(match("M1",inclusion.edgecov))){
-          temp.M1 <- var.gir.myl.M1[[i]] * (10^scale);#temp.M1 <- apply(temp.M1, c(1,2), round);
-          diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0;temp.M1 <- abs(temp.M1)
-          if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
-        }
-        if(!is.na(match("M3",inclusion.edgecov))){
-          temp.M3 <- var.gir.myl.M3[[i]] * (10^scale);#temp.M3 <- apply(temp.M3, c(1,2), round);
-          diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0;temp.M3 <- abs(temp.M3)
-          if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
-        }
-        if(!is.na(match("M6",inclusion.edgecov))){
-          temp.M6 <- var.gir.myl.M6[[i]] * (10^scale);#temp.M6 <- apply(temp.M6, c(1,2), round);
-          diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0;temp.M6 <- abs(temp.M6)
-          if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
-        }
-        if(!is.na(match("M9",inclusion.edgecov))){
-          temp.M9 <- var.gir.myl.M9[[i]] * (10^scale);#temp.M9 <- apply(temp.M9, c(1,2), round);
-          diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0;temp.M9 <- abs(temp.M9)
-          if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
-        }
-        if(!is.na(match("Y1",inclusion.edgecov))){
-          temp.Y1 <- var.gir.myl.Y1[[i]] * (10^scale);#temp.Y1 <- apply(temp.Y1, c(1,2), round);
-          diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0;temp.Y1 <- abs(temp.Y1)
-          if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
-        }
-      }
-      if(BidType == "var.fevd"){
-        
-        if(!is.na(match("ON",inclusion.edgecov))){
-          temp.ON <- var.fevd.myl.ON[[i]] * (10^scale);#temp.ON <- apply(temp.ON, c(1,2), round);
-          diag(temp.ON) <- 0;temp.ON[is.na(temp.ON)] <- 0
-          if(!is.na(match("ON",trans))){temp.ON <- t(temp.ON)}
-        }
-        if(!is.na(match("W1",inclusion.edgecov))){
-          temp.W1 <- var.fevd.myl.W1[[i]] * (10^scale);#temp.W1 <- apply(temp.W1, c(1,2), round);
-          diag(temp.W1) <- 0;temp.W1[is.na(temp.W1)] <- 0
-          if(!is.na(match("W1",trans))){temp.W1 <- t(temp.W1)}
-        }
-        if(!is.na(match("W2",inclusion.edgecov))){
-          temp.W2 <- var.fevd.myl.W2[[i]]  * (10^scale);#temp.W2 <- apply(temp.W2, c(1,2), round);
-          diag(temp.W2) <- 0;temp.W2[is.na(temp.W2)] <- 0
-          if(!is.na(match("W2",trans))){temp.W2 <- t(temp.W2)}
-        }
-        if(!is.na(match("M1",inclusion.edgecov))){
-          temp.M1 <- var.fevd.myl.M1[[i]]  * (10^scale);#temp.M1 <- apply(temp.M1, c(1,2), round);
-          diag(temp.M1) <- 0;temp.M1[is.na(temp.M1)] <- 0
-          if(!is.na(match("M1",trans))){temp.M1 <- t(temp.M1)}
-        }
-        if(!is.na(match("M3",inclusion.edgecov))){
-          temp.M3 <- var.fevd.myl.M3[[i]] * (10^scale) ;#temp.M3 <- apply(temp.M3, c(1,2), round);
-          diag(temp.M3) <- 0;temp.M3[is.na(temp.M3)] <- 0
-          if(!is.na(match("M3",trans))){temp.M3 <- t(temp.M3)}
-        }
-        if(!is.na(match("M6",inclusion.edgecov))){
-          temp.M6 <- var.fevd.myl.M6[[i]] * (10^scale) ;#temp.M6 <- apply(temp.M6, c(1,2), round);
-          diag(temp.M6) <- 0;temp.M6[is.na(temp.M6)] <- 0
-          if(!is.na(match("M6",trans))){temp.M6 <- t(temp.M6)}
-        }
-        if(!is.na(match("M9",inclusion.edgecov))){
-          temp.M9 <- var.fevd.myl.M9[[i]] * (10^scale) ;#temp.M9 <- apply(temp.M9, c(1,2), round);
-          diag(temp.M9) <- 0;temp.M9[is.na(temp.M9)] <- 0
-          if(!is.na(match("M9",trans))){temp.M9 <- t(temp.M9)}
-        }
-        if(!is.na(match("Y1",inclusion.edgecov))){
-          temp.Y1 <- var.fevd.myl.Y1[[i]] * (10^scale) ;#temp.Y1 <- apply(temp.Y1, c(1,2), round);
-          diag(temp.Y1) <- 0;temp.Y1[is.na(temp.Y1)] <- 0
-          if(!is.na(match("Y1",trans))){temp.Y1 <- t(temp.Y1)}
-        }
-      }
-    }
     }
     
     if(triangle == "upper"){
@@ -1496,16 +1495,13 @@ dyCoefErgm.yearly <- function(data, set,
       dy.coef$coef0.05[dy.coef$"p-value" > 0.05 | dy.coef$"p-value" < 0.01|is.na(dy.coef$"p-value")] <- NA
       dy.coef$coef0.1[dy.coef$"p-value" > 0.1 | dy.coef$"p-value" < 0.05|is.na(dy.coef$"p-value")] <- NA
       dy.coef <- xts(dy.coef, as.Date(Date, format='%Y-%m-%d'))
-      
-      is.higher.year <- apply.yearly(is.higher[,-1], mean)
-      is.higher.year <- is.higher.year[paste0(Date[1],"/",Date[length(Date)])]
-      is.higher.year <- xts(is.higher.year, as.Date(Date, format='%Y-%m-%d'))
-      dy.coef <- merge(dy.coef, is.higher.year$crisis.sma20, join = "left")
+      dy.coef <- merge(dy.coef, is.higher$crisis.sma20)
+      dy.coef <- apply(X = dy.coef,MARGIN = 2,FUN = replace.na.near)
+      dy.coef <- xts(dy.coef, as.Date(index(is.higher), format='%Y-%m-%d'))
       names(dy.coef)[length(names(dy.coef))] <- "Crisis"
       
       color <- colorRampPalette(c("red", "blue"))(3)
       dy.main <- set
-      
       saveWidget.dygraph <- 
         dygraph.interbank(dy.data=subset(dy.coef, select=-p.value), dy.main, color, begin.dateWindow = index(dy.coef)[1]) %>%
         dyAxis("y", label = "Coefficients", independentTicks = T) %>%
@@ -1541,10 +1537,9 @@ dyCoefErgm.yearly <- function(data, set,
         }
         
         dy.coef <- xts(dy.coef, as.Date(Date, format='%Y-%m-%d'))
-        is.higher.year <- apply.yearly(is.higher[,-1], mean)
-        is.higher.year <- is.higher.year[paste0(Date[1],"/",Date[length(Date)])]
-        is.higher.year <- xts(is.higher.year, as.Date(Date, format='%Y-%m-%d'))
-        dy.coef <- merge(dy.coef, is.higher.year$crisis.sma20, join = "left")
+        dy.coef <- merge(dy.coef, is.higher$crisis.sma20)
+        dy.coef <- apply(X = dy.coef,MARGIN = 2,FUN = replace.na.near)
+        dy.coef <- xts(dy.coef, as.Date(Date, format='%Y-%m-%d'))
         names(dy.coef)[length(names(dy.coef))] <- "Crisis"
         
         color <- colorRampPalette(c("red", "blue"))(n.inclusion.edgecov)
@@ -1576,7 +1571,6 @@ dyCoefErgm.yearly <- function(data, set,
   }
   return(return.result)
 }
-
 ###################################################################
 # fill blanks in matrix
 ###################################################################

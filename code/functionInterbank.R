@@ -371,7 +371,7 @@ replace.na.near <- function(x){
   x <- x[length(x):1]
   return(x)
 }
-replace.na.near(c(NA,NA,1,1))
+replace.na.near(c(NA,NA,1,1,NA,2,NA))
 #################################################################
 #aenet.dygraph
 #################################################################
