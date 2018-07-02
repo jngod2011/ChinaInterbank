@@ -44,7 +44,9 @@ Interpolation <- function(x)
   
   return(y)
 }
-
+#################################################################
+# col_apply
+#################################################################
 col_apply <- function(x = data.frame()){
   y <- x
   ncol.x <- NCOL(x)
@@ -1155,6 +1157,11 @@ dyCoefErgm.yearly <- function(data, set,
         temp.loan <- as.matrix(temp.loan,nnode,nnode)
         if(!is.na(match("loan",trans))){temp.loan <- t(temp.loan)}
       }
+      if(!is.na(match("rolling",inclusion))){
+        temp.rolling <- rolling[[i]][1:nnode,1:nnode] * (10^scale)  ;#temp.ON <- apply(temp.ON, c(1,2), round);
+        diag(temp.rolling) <- 0;temp.rolling[is.na(temp.rolling)] <- 0
+        if(!is.na(match("rolling",trans))){temp.rolling <- t(temp.rolling)}
+      }
       
       if(!is.null(BidType)){
       if(BidType == "aenet"){
@@ -1485,9 +1492,9 @@ dyCoefErgm.yearly <- function(data, set,
       dy.coef <- cbind(unlist(coef.ergm.l),unlist(coef.ergm.l),unlist(coef.ergm.l),unlist(p.ergm.l)) %>% as.data.frame
       names(dy.coef) <- c("coef0.01","coef0.05","coef0.1","p-value")
       
-      dy.coef[dy.coef$"p-value" > 0.01, 1] <- NA
-      dy.coef[dy.coef$"p-value" > 0.05 | dy.coef$"p-value" < 0.01,2] <- NA
-      dy.coef[dy.coef$"p-value" > 0.1 | dy.coef$"p-value" < 0.05,3] <- NA
+      dy.coef$coef0.01[dy.coef$"p-value" > 0.01 |is.na(dy.coef$"p-value")] <- NA
+      dy.coef$coef0.05[dy.coef$"p-value" > 0.05 | dy.coef$"p-value" < 0.01|is.na(dy.coef$"p-value")] <- NA
+      dy.coef$coef0.1[dy.coef$"p-value" > 0.1 | dy.coef$"p-value" < 0.05|is.na(dy.coef$"p-value")] <- NA
       dy.coef <- xts(dy.coef, as.Date(Date, format='%Y-%m-%d'))
       
       is.higher.year <- apply.yearly(is.higher[,-1], mean)

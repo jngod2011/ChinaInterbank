@@ -1,4 +1,6 @@
 #################################################################
+# dygraph.interbank
+#################################################################
 dygraph.interbank <- function(dy.data, dy.main, color, begin.dateWindow = NULL, end.dateWindow = NULL){
   if(missing(begin.dateWindow)){
     begin.dateWindow <- index(dy.data)[1]
@@ -43,6 +45,8 @@ dygraph.interbank <- function(dy.data, dy.main, color, begin.dateWindow = NULL, 
     dyLimit(0, color = "gray")
 }
 #################################################################
+# fevd.var
+#################################################################
 fevd.var <- function(data, mode, span, n.ahead){
 
   matrix.list <- list()
@@ -61,6 +65,8 @@ fevd.var <- function(data, mode, span, n.ahead){
   return(matrix.list)
 }
 
+#################################################################
+# aenet.span
 #################################################################
 aenet.span <- function(data,start.point = "NULL", end.point = "NULL"){
   if(start.point == "NULL") {start.point <- data$Date[1]}
@@ -96,6 +102,8 @@ aenet.span <- function(data,start.point = "NULL", end.point = "NULL"){
   return(return.result)
 }
 
+#################################################################
+# aenet.fix
 #################################################################
 aenet.fix <- function(data, start.point = "NULL", end.point = "NULL", fix){
   tic()
@@ -192,6 +200,8 @@ aenet.fix <- function(data, start.point = "NULL", end.point = "NULL", fix){
 }
 
 #################################################################
+# f.na.approx
+#################################################################
 f.na.approx <- function(x){
   z <- is.na(x) %>% as.numeric
   if(is.na(x[1])==T){x[1] <- x[which(z==0)[1]]}
@@ -203,7 +213,9 @@ f.na.approx <- function(x){
 #na.spline(x) #对缺失值进行样条插值
 #na.locf(x) #末次观测值结转法
 ###############################################################
-forceNetwork.anent<- function(data, aenet.matrix, maturity, file.path, is.higher, group.bid, crisis){
+# forceNetwork.anent
+###############################################################
+forceNetwork.anent <- function(data, aenet.matrix, maturity, file.path, is.higher, group.bid, crisis){
   is.higher.aenet <- merge(data, is.higher, by= "Date", all.x = T)[,c("Date","sum",crisis)]
   is.higher.aenet[,crisis] <- cut(as.numeric(is.higher.aenet[,crisis]),breaks = 5, include.lowest=F, labels = c(1:5))
   if(sum(is.na(is.higher.aenet)) > 0){
@@ -252,6 +264,8 @@ forceNetwork.anent<- function(data, aenet.matrix, maturity, file.path, is.higher
   }
 }
 ###############################################################
+#forceNetwork.anent.yearly
+###############################################################
 forceNetwork.anent.yearly <- function(aenet.matrix, maturity, file.path, group.bid){
   n <- length(aenet.matrix)
   for (t in 1:n) {
@@ -289,6 +303,8 @@ forceNetwork.anent.yearly <- function(aenet.matrix, maturity, file.path, group.b
     flush.console()
   }
 }
+###############################################################
+# dygraph.anent
 ###############################################################
 dygraph.anent <- function(data, is.higher, dy.main, group.bid){
   ts.data <- c()
@@ -330,15 +346,15 @@ dy.genFEVD <- function(data, mode, span, n.ahead){
   close(pb)
   return(result)
 }
-
-
-
-#the latter network ~ the former network
+#################################################################
+#replaceNA0
 #################################################################
 replaceNA0 <- function(x){
   x[is.na(x)] <- 0
   return(x)
 }
+#################################################################
+# replace.na.near
 #################################################################
 replace.na.near <- function(x){
   for (i in 2:length(x)) {
@@ -359,7 +375,7 @@ replace.na.near(c(NA,NA,1,1))
 #################################################################
 #aenet.dygraph
 #################################################################
-aenet.dygraph <- function(x){
+aenet.dygraph <- function(x,title){
   index <- c()
   for (i in 1:length(x)) {
     temp <- x[[i]][1:10,1:10] 
@@ -368,13 +384,14 @@ aenet.dygraph <- function(x){
     temp <- rowSums(temp)
     index <- rbind(index,temp)
   }
-  dy.data <- xts(index, as.Date(Date[c(250:259)], format='%Y-%m-%d'))
+  dy.data <- xts(index, as.Date(Date[-c(1:250)], format='%Y-%m-%d'))
   dy.data <- merge(dy.data, is.higher$crisis.sma20) %>% na.omit
   colnames(dy.data) <- c(bank10.abbr,"Crisis")
-  dy.main <- "Funding Cost"
-  color <- c(group.stockprice[bank10.abbr,"color"],"gray")
+  dy.main <- c("Funding Cost", title)
+  color <- c("#C54949","#D37676","#E2A4A4","#F0D1D1","#FFA31C","#FFAE38","#FFC571","#FFD18D","#FFF3E2", "#BBCDB3", "gray")#c(group.stockprice[bank10.abbr,"color"],"gray")
   dygraph.interbank(dy.data, dy.main, color) %>% 
     dyAxis("y", label = "Spillover Index", independentTicks = T) %>%
     dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
     dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
 }
+

@@ -604,12 +604,14 @@ rank.eigen <- rank.test(vecm.tsDyn, cval = 0.01, type = "eigen")$r
 rank.trace <- rank.test(vecm.tsDyn, cval = 0.01, type = "trace")$r
 rank <- floor((rank.eigen + rank.trace)/2)#4
 
-daily.vecm.gir0 <- dy.VECM.GIR(data = sp, n.ahead = 0, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
-daily.vecm.gir1 <- dy.VECM.GIR(data = sp, n.ahead = 1, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
-daily.vecm.gir2 <- dy.VECM.GIR(data = sp, n.ahead = 2, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
-daily.vecm.gir3 <- dy.VECM.GIR(data = sp, n.ahead = 3, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
-daily.vecm.gir4 <- dy.VECM.GIR(data = sp, n.ahead = 4, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
-daily.vecm.gir5 <- dy.VECM.GIR(data = sp, n.ahead = 5, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
+#daily.vecm.gir0 <- dy.VECM.GIR(data = sp, n.ahead = 0, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
+#daily.vecm.gir1 <- dy.VECM.GIR(data = sp, n.ahead = 1, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
+#daily.vecm.gir2 <- dy.VECM.GIR(data = sp, n.ahead = 2, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
+#daily.vecm.gir3 <- dy.VECM.GIR(data = sp, n.ahead = 3, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
+#daily.vecm.gir4 <- dy.VECM.GIR(data = sp, n.ahead = 4, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
+#daily.vecm.gir5 <- dy.VECM.GIR(data = sp, n.ahead = 5, mode = "fix", span = 250, keep.vecm = T,rank = 4)[[1]]
+#save(daily.vecm.gir0, daily.vecm.gir1, daily.vecm.gir2, daily.vecm.gir3, daily.vecm.gir4, daily.vecm.gir5, sp, file = "data/Rdata/latex_daily.vecm.gir.Rdata")
+load(file = "data/Rdata/latex_daily.vecm.gir.Rdata")
 
 index <- c()
 for (i in 1:length(daily.vecm.gir0)) {
@@ -696,4 +698,47 @@ save(aenet.myl.ON,
      aenet.myl.Y1,
      file="data/Rdata/DailyShiborBidAenet.Rdata")  
 #aenet.dygraph(aenet.myl.ON)
+load("data/Rdata/DailyShiborBidAenet.Rdata")
+aenet.dygraph(aenet.myl.ON,"ON")
+aenet.dygraph(aenet.myl.W1,"W1")
+aenet.dygraph(aenet.myl.W2,"W2")
+aenet.dygraph(aenet.myl.M1,"M1")
+aenet.dygraph(aenet.myl.M3,"M3")
+aenet.dygraph(aenet.myl.M6,"M6")
+aenet.dygraph(aenet.myl.M9,"M9")
+aenet.dygraph(aenet.myl.Y1,"Y1")
+
+for (i in 1:length(aenet.myl.ON)) {
+  print(100-sum(is.na(aenet.myl.ON[[i]][1:10,1:10])))
+}
+
+aenet.myl.long <- list()
+aenet.myl.short <- list()
+for (i in 1:length(aenet.myl.ON)) {
+  ON <- aenet.myl.ON[[i]];ON[is.na(ON)] <- 0
+  W1 <- aenet.myl.W1[[i]];W1[is.na(W1)] <- 0
+  W2 <- aenet.myl.W2[[i]];W2[is.na(W2)] <- 0
+  M1 <- aenet.myl.M1[[i]];M1[is.na(M1)] <- 0
+  M3 <- aenet.myl.M3[[i]];M3[is.na(M3)] <- 0
+  M6 <- aenet.myl.M6[[i]];M6[is.na(M6)] <- 0
+  M9 <- aenet.myl.M9[[i]];ON[is.na(M9)] <- 0
+  Y1 <- aenet.myl.Y1[[i]];ON[is.na(Y1)] <- 0
+  aenet.myl.short[[i]] <- (ON+W1+W2+M1)/4
+  aenet.myl.long[[i]] <- (M3+M6+M9+Y1)/4
+  print(i)
+}
+aenet.dygraph(aenet.myl.short,"short")
+aenet.dygraph(aenet.myl.long,"long")
+
+for (i in 1:length(aenet.myl.ON)) {
+  aenet.myl.short[[i]][aenet.myl.short[[i]]==0] <-NA
+  print(100-sum(is.na(aenet.myl.short[[i]][1:10,1:10])))
+}
+
+for (i in 1:length(aenet.myl.ON)) {
+  aenet.myl.long[[i]][aenet.myl.long[[i]]==0] <-NA
+  print(100-sum(is.na(aenet.myl.long[[i]][1:10,1:10])))
+}
+
+
 

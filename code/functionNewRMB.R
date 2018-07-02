@@ -1,4 +1,6 @@
+#################################################################
 #Start stop watch timer
+#################################################################
 tic <- function(gcFirst = TRUE, type=c("elapsed", "user.self", "sys.self")){
   type <- match.arg(type)
   assign(".type", type, envir=baseenv())
@@ -7,8 +9,9 @@ tic <- function(gcFirst = TRUE, type=c("elapsed", "user.self", "sys.self")){
   assign(".tic", tic, envir=baseenv())
   invisible(tic)
 }
-
+#################################################################
 #Read elapsed time from stopwatch
+#################################################################
 toc <- function(){
   type <- get(".type", envir=baseenv())
   toc <- proc.time()[type]
@@ -18,6 +21,7 @@ toc <- function(){
 }
 #################################################################
 # export ADF test
+#################################################################
 ADFtest.phi2 <- function(data){
   result.ADFtest <- data.frame(matrix(NA, 1, ncol(data)))
   names(result.ADFtest) <- names(data)
@@ -39,7 +43,9 @@ ADFtest.phi2 <- function(data){
   }
   return(result.ADFtest)
 }
+#################################################################
 # export the simpliest ADF test
+#################################################################
 ADFtest.tau3 <- function(data, selectlags){
   # Lag selection can be achieved according to the Akaike "AIC" or the Bayes "BIC" information criteria.
   result.ADFtest <- data.frame(matrix(NA, 2, ncol(data)))
@@ -74,6 +80,7 @@ ADFtest.tau3 <- function(data, selectlags){
 }
 #################################################################
 # genFEVD for vecm using tsDyn library
+#################################################################
 genFEVD.VECM <- function (est, n.ahead, no.corr = F) {
   Phi <- tsDyn::irf(est, n.ahead = n.ahead, boot = F, ortho = F)
   Phi <- lapply(1:(n.ahead + 1), function(j) sapply(Phi$irf, 
@@ -90,7 +97,9 @@ genFEVD.VECM <- function (est, n.ahead, no.corr = F) {
   tab <- t(apply(tab, 2, function(i) i/sum(i)))
   return(tab)
 }
+#################################################################
 # booting genFEVD 
+#################################################################
 genFEVD.VECM.boot.official <- function (est, boot = TRUE, n.ahead, no.corr = F, ci , runs , seed, band){
   Phi <- c()
   Phi <- tsDyn::irf(est, n.ahead = n.ahead, boot = TRUE, ci = ci, runs = runs, seed = seed, impulse= NULL, response = NULL, ortho = F)
@@ -121,6 +130,7 @@ genFEVD.VECM.boot.official <- function (est, boot = TRUE, n.ahead, no.corr = F, 
 }
 #################################################################
 # process of genFEVD for vecm using tsDyn library
+#################################################################
 process.genFEVD.VECMorVAR <- function(data, group, start.point = "NULL", end.point = "NULL", n.ahead = 1, keep.vecm , rank){
   if(missing(group)) {group <- names(data)[-1]}
   if(missing(keep.vecm)) {keep.vecm <- FALSE}
@@ -222,6 +232,7 @@ process.genFEVD.VECMorVAR <- function(data, group, start.point = "NULL", end.poi
 }
 #################################################################
 # process of genFEVD for vecm using vars library (abandoned)
+#################################################################
 process.genFEVD.VECMorVAR.vars <- function(data, group, start.point = "NULL", end.point = "NULL", n.ahead){
   
   data <- data[, c("Date", group)] %>% na.omit
@@ -295,6 +306,7 @@ process.genFEVD.VECMorVAR.vars <- function(data, group, start.point = "NULL", en
 }
 #################################################################
 # export result of process.genFEVD.VECMorVAR into table
+#################################################################
 result.export <- function(data, group.list, start.point = "NULL", end.point = "NULL", n.ahead){
   # define rsult matrix
   result.matrix <- data.frame(matrix(0, length(group.list), length(unique(unlist(group.list))) + 11))
@@ -341,6 +353,7 @@ result.export <- function(data, group.list, start.point = "NULL", end.point = "N
 }
 #################################################################
 # run process.genFEVD.VECMorVAR in interation or fix version
+#################################################################
 dyFEVD.cny <- function(data, group, n.ahead, mode, span){
   tic()
   n <- nrow(data) - span
@@ -382,6 +395,7 @@ dyFEVD.cny <- function(data, group, n.ahead, mode, span){
 }
 #################################################################
 # run process.genFEVD.VECMorVAR in interation or fix version for boot
+#################################################################
 dyFEVD.cny.boot.official <- function(data, group, ci = 0.05, seed, runs, mode, span, n.ahead){
   tic()
   
@@ -447,6 +461,8 @@ dyFEVD.cny.boot.official <- function(data, group, ci = 0.05, seed, runs, mode, s
   close(pb)
 }
 #################################################################
+# dy.VECM.FEVD
+#################################################################
 dy.VECM.FEVD <- function(data, group, n.ahead, mode, span, keep.vecm, rank){
   tic()
   n <- nrow(data)
@@ -489,6 +505,8 @@ dy.VECM.FEVD <- function(data, group, n.ahead, mode, span, keep.vecm, rank){
   close(pb)   
   return(return.list)# AllInf is all information.
 }
+#################################################################
+# dy.VECM.GIR
 #################################################################
 dy.VECM.GIR <- function(data, group, n.ahead, mode, span, keep.vecm =FALSE,
                         rank = NULL#NULL or numberic
@@ -558,6 +576,7 @@ dy.VECM.GIR <- function(data, group, n.ahead, mode, span, keep.vecm =FALSE,
 }
 #################################################################
 # dygraph
+#################################################################
 dygraph.NewRMB <- function(dy.data,dy.main,color){
   #color <- c("black","gray",colorRampPalette(c("red", "white"))(5)[-5], colorRampPalette(c("blue", "white"))(5)[-5], colorRampPalette(c("green", "white"))(5)[-5])
   #color <- c(RColorBrewer::brewer.pal(9, "Set1"),RColorBrewer::brewer.pal(8, "Set2"),RColorBrewer::brewer.pal(12, "Set3"))
@@ -599,8 +618,9 @@ dygraph.NewRMB <- function(dy.data,dy.main,color){
     dyEvent("2017-5-26", "2017.5.26:逆周期因子", labelLoc = "top") %>%
     dyEvent("2017-9-11", "2017.9.11:外汇准备金率从20%调整为0", labelLoc = "top")
   }
-
+#################################################################
 # dygraph
+#################################################################
 dygraph.horizon <- function(dy.data,dy.main,color, ylabel){
   #color <- c("black","gray",colorRampPalette(c("red", "white"))(5)[-5], colorRampPalette(c("blue", "white"))(5)[-5], colorRampPalette(c("green", "white"))(5)[-5])
   #color <- c(RColorBrewer::brewer.pal(9, "Set1"),RColorBrewer::brewer.pal(8, "Set2"),RColorBrewer::brewer.pal(12, "Set3"))
@@ -617,7 +637,9 @@ dygraph.horizon <- function(dy.data,dy.main,color, ylabel){
     
     #dyEvent("2008-9-14", "2008.9.14:雷曼兄弟破产", labelLoc = "top") %>%
 }
+#################################################################
 # dygraph horizon in solid color
+#################################################################
 dygraph.horizon.solid <- function(dy.data, dy.main, color, ylabel, group, need.nrow = TRUE, fillAlpha = 1){
   #order is actually the name sequence of the dy.data
   #color <- c("black","gray",colorRampPalette(c("red", "white"))(5)[-5], colorRampPalette(c("blue", "white"))(5)[-5], colorRampPalette(c("green", "white"))(5)[-5])
@@ -644,11 +666,14 @@ dygraph.horizon.solid <- function(dy.data, dy.main, color, ylabel, group, need.n
 }
 #################################################################
 # Function to cut your data, and assign colour to each range
+#################################################################
 ColorRange <-  function(x, color){
   cut(x, seq(from = 0, to = 100, by = 10),
       labels <- paste0(color,"!", seq(from = 10, to = 100, by = 10), "!white"),
       include.lowest = FALSE, right = TRUE)
 } 
+#################################################################
+# tab.fevd.cny
 #################################################################
 tab.fevd.cny <- function(tab, file.path, tab.caption, tab.label){
   table.drops <- c("start.point", "end.point", "n.ahead", "lags", "n_groups", "class", "group.member")
@@ -698,6 +723,8 @@ tab.fevd.cny <- function(tab, file.path, tab.caption, tab.label){
   )
 }
 #################################################################
+# FEVDhorizon
+#################################################################
 FEVDhorizon <- function(data, group, start.point = "NULL", end.point = "NULL", v.n.ahead){
   tic()
   horizon <- c()
@@ -713,6 +740,7 @@ FEVDhorizon <- function(data, group, start.point = "NULL", end.point = "NULL", v
 }
 #################################################################
 # is.significant
+#################################################################
 significance <- function(x){
   if(x >= 0.1){
     sgnf <- ""
@@ -730,6 +758,7 @@ significance <- function(x){
 }
 #################################################################
 # Parameter Estimation Results for the Vector Error Correction Model
+#################################################################
 table.parameter <- function(model, tab.label){
   process.vecm <- model
   rank <- process.vecm$rank
@@ -784,6 +813,7 @@ table.parameter <- function(model, tab.label){
 }
 #################################################################
 # cointegration test in latex
+#################################################################
 table.CItest <- function(model, tab.label){
 data <- model$data
 vecm.tsDyn <- model$rank.test
@@ -858,6 +888,7 @@ write.xlsx(table.COINtest.xlsx, file = paste0("latex/excel/COINtest", tab.label,
 }
 ####################################################################
 #convert vecm to var of in library tsDyn
+#################################################################
 vec2var.tsDyn <- function(x){
   
   model <- if(inherits(x,"VECM")) "VECM" else "VAR"
