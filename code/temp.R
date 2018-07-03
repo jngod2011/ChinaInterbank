@@ -31,6 +31,8 @@ dyCoefErgm.yearly <- function(data, set,
   if(missing(triangle)){triangle <- "all"} # c("lower","upper")
   if(missing(directed)){directed <- TRUE} # TRUE FALSE
   
+  file.name <- paste0(set, "_", inclusion.edgecov)
+  
   total <- length(data)
   p.ergm.l <- c()
   max.l <- c()
@@ -551,25 +553,22 @@ dyCoefErgm.yearly <- function(data, set,
       timeend <- Sys.time()
       runningtime<-timeend-timestart
       if(runningtime/60 > 60*36-30){
-        write.csv(coef.ergm.l, file = paste0("Coef",set,".csv"))
-        write.csv(p.ergm.l, file = paste0("Pvalue",set,".csv"))
-        write.csv(std.ergm.l, file = paste0("Std",set,".csv"))
+        file.path<-paste0("data/Rdata/", file.name,".Rdata")
+        save(coef.ergm.l,p.ergm.l,std.ergm.l,file = file.path)
       }
     }
   }
   close(pb)
   
   if(csv){
-    write.csv(coef.ergm.l, file = paste0("Coef",set,".csv"))
-    write.csv(p.ergm.l, file = paste0("Pvalue",set,".csv"))
+    file.path<-paste0("data/Rdata/", file.name,".Rdata")
+    save(coef.ergm.l,p.ergm.l,std.ergm.l,file = file.path)
   }
   
   #dygraph###########################################################################################
   # only one varialbe
   if(fig){
     if(n.inclusion.edgecov == 1){
-      file.name <- paste0(set, "_", inclusion.edgecov)
-      
       dy.coef <- cbind(unlist(coef.ergm.l),unlist(coef.ergm.l),unlist(coef.ergm.l),unlist(p.ergm.l)) %>% as.data.frame
       names(dy.coef) <- c("coef0.01","coef0.05","coef0.1","p-value")
       

@@ -128,7 +128,8 @@ combas.date <- combas.date[order(combas.date)]
 p.matrix <- list()
 matrix <- list()
 data.interbank <- list()
-for (i in 1:length(combas.date)) {
+p.matrix <- list()
+for (i in 17:length(combas.date)) {
   data <- filter(raw.data,  报表类型编码 == "A" & 会计期间 == combas.date[[i]])
   data[is.na(data)] <- 0
   data$银行类型 <- rep("Urban Commercial Banks", nrow(data))
@@ -156,20 +157,22 @@ for (i in 1:length(combas.date)) {
   data <- data[order(data$银行类型,decreasing = F),] 
   
   #maximum entropy
-  #locate <- sapply(c("交通银行", "工商银行", "建设银行", "中国银行", "平安银行", "浦发银行", "华夏银行", "民生银行", "招商银行", "兴业银行", "中信银行", "宁波银行", "南京银行", "北京银行"), grepl, data$银行中文简称)
-  #locate <- apply(locate, 2, which)
-  #locate <- locate %>% unlist
+  locate <- sapply(group.stockprice[bank10.abbr,"Cname"], grepl, data$银行中文简称)
+  locate <- apply(locate, 2, which)
+  locate <- locate %>% unlist
   EstimatedMatrix.me <- matrix_estimation(rowsums = data$拆出资金净额, colsums = data$拆入资金, method = "me", max.it = 1000, abs.tol = 0.001, verbose = TRUE)
   rownames(EstimatedMatrix.me) <- data$银行中文简称
   colnames(EstimatedMatrix.me) <- data$银行中文简称
   
   matrix[[i]] <- EstimatedMatrix.me
+  p.matrix[[i]] <- EstimatedMatrix.me[locate,locate]
+  
   data.interbank[[i]] <- data
 }
 max.matrix <- unlist(matrix) %>% max
 #
 for (i in 1:length(data.interbank)) {
-  i <- length(data.interbank)
+  #i <- length(data.interbank)
   data <- data.interbank[[length(data.interbank)]] 
   EstimatedMatrix.me <- matrix_estimation(rowsums = data$拆出资金净额, colsums = data$拆入资金, method = "me", max.it = 1000, abs.tol = 0.001, verbose = TRUE)
   temp <- EstimatedMatrix.me/max.matrix 
@@ -197,6 +200,34 @@ for (i in 1:length(data.interbank)) {
                          height = 700 , width = 700, bounded = F, zoom = T, charge = -1000)
   widget2png(rbokeh , file = paste0("latex/report/figure/Allinterbank", substr(combas.date[i],1,4), ".png"), timeout = 1200)
 }
+#################################################################
+# trimed interbank 10
+#################################################################
+temp <- p.matrix[[length(p.matrix)]]/max.matrix 
+colnames(temp) <- bank10.abbr;rownames(temp) <- bank10.abbr
+if(max(temp)>0.02){temp[temp < 0.02] <- 0}
+igraph.matrix <- graph_from_adjacency_matrix(temp, mode = c("directed"), weighted = TRUE, diag = FALSE)
+networkD3.matrix <- igraph_to_networkD3(igraph.matrix)
+networkD3.matrix[[2]]$group <- group.stockprice[bank10.abbr,"Eclass"]
+
+temp.size <- rowSums(temp)
+temp.size[temp.size < 0.4] <- 0.4
+networkD3.matrix[[2]]$size <- temp.size
+networkD3.matrix[[2]]$group <- factor(networkD3.matrix[[2]]$group, order = TRUE, levels = c("State-Owned Banks","Joint-Equity Commercial Banks","Urban Commercial Banks", "Rural Commercial Banks"))
+networkD3.matrix[[2]]$size <- networkD3.matrix[[2]]$size*10
+networkD3.matrix[[1]]$value <- networkD3.matrix[[1]]$value*10
+matrix.date <- data.frame(name="",size=0, group=as.character(substr(combas.date[i],1,4)))
+networkD3.matrix[[2]] <- rbind(networkD3.matrix[[2]], matrix.date)
+
+ColourScale <- 'd3.scaleOrdinal() .range(["#B71C1C","#FF9800","#33691E","white"]);'
+rbokeh <- forceNetwork(Links = networkD3.matrix[[1]], Nodes = networkD3.matrix[[2]],
+                       Source = "source", Target = "target", Value = "value", 
+                       arrows = T, linkDistance = JS("function(d){return 1 / d.value * 100 }"), linkWidth = JS("function(d) { return d.value; }"), linkColour = "gray",
+                       NodeID = "name", Nodesize = 'size', radiusCalculation = "d.nodesize", colourScale = JS(ColourScale),
+                       Group = "group", legend = T, fontSize = 10,
+                       opacity = 0.8, opacityNoHover = 1,
+                       height = 700 , width = 700, bounded = F, zoom = T, charge = -1000)
+widget2png(rbokeh , file = paste0("latex/report/figure/Trimedinterbank", substr(combas.date[i],1,4), ".png"), timeout = 1200)
 #################################################################
 # Number of Banks Participate in Interbank Market
 #################################################################
@@ -368,10 +399,10 @@ for (i in 2:length(raw.wind)) {
 names(wind)
 dim(wind)
 
-wind <- wind[,c("资产总计(万元)", "负债合计(万元)","手续费及佣金收入(万元)","营业收入(万元)")]/10^8
+wind <- wind[,c("资产总计(万元)", "负债合计(万元)","手续费及佣金收入(万元)","营业收入(万元)","拆出资金(万元)","拆入资金(万元)")]/10^8
 wind$sty <- wind$`手续费及佣金收入(万元)`/wind$`营业收入(万元)`
-wind <- wind[,c("资产总计(万元)", "负债合计(万元)","sty")]
-names(wind) <- c("ass","dbt","sty")
+wind <- wind[,c("资产总计(万元)", "负债合计(万元)","拆出资金(万元)","拆入资金(万元)")]
+names(wind) <- c("ass","dbt","lnd","brr")
 
 summary.wind <- sapply(wind %>% na.omit, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
 summary.wind <- summary.wind %>% round(2) %>% t
@@ -636,7 +667,9 @@ for (i in 1:length(daily.vecm.gir0)) {
                  daily.vecm.gir3[[i]],
                  daily.vecm.gir4[[i]],
                  daily.vecm.gir5[[i]]),dim = c(10,10,6))
-  temp <- weighted_gir(GIR, divided=1)$net_average
+  #temp <- weighted_gir(GIR, divided=1)$net_average
+  temp <- weighted_gir(GIR, divided=1)$weighted.matrix %>% abs %>% t
+  temp <- rowSums(temp)/9
   index <- rbind(index,temp)
 }
 
@@ -666,35 +699,6 @@ dygraph.interbank(dy.data, dy.main, color) %>%
 #################################################################
 # shibor BID
 #################################################################
-n.sp <- bank10.abbr
-n.bond <- c("TRCHZ12", "TRCHZ15", "TRCHZ20", "TRCHZ25", "TRCHZ2Y", "TRCHZ30", "TRCHZ3Y", "TRCHZ4Y", "TRCHZ5Y", "TRCHZ6Y", "TRCHZ7Y", "TRCHZ8Y", "TRCHZ9Y", "TRCHZ10", "TRCHZ1Y")
-n.is.higher <- c("O.N","X1W","X2W","X1M","X3M","X6M","X9M","sum","crisis.sma20","crisis")
-n.all.bid.ON <- paste0(bank10.abbr,".ON")
-n.all.bid.W1 <- paste0(bank10.abbr,".W1")
-n.all.bid.W2 <- paste0(bank10.abbr,".W2")
-n.all.bid.M1 <- paste0(bank10.abbr,".M1")
-n.all.bid.M3 <- paste0(bank10.abbr,".M3")
-n.all.bid.M6 <- paste0(bank10.abbr,".M6")
-n.all.bid.M9 <- paste0(bank10.abbr,".M9")
-n.all.bid.Y1 <- paste0(bank10.abbr,".Y1")
-
-data <- read.csv(file = "data/bank10/ForestData.csv")
-data <- xts(data[,-1], as.Date(data[,1], format='%Y-%m-%d'))
-Date <- index(data) %>% as.character
-
-is.higher <- data[,n.is.higher]
-sp <- data[,n.sp]
-bond <- data[,n.bond]
-all.bid.ON <- data[,n.all.bid.ON]
-all.bid.W1 <- data[,n.all.bid.W1]
-all.bid.W2 <- data[,n.all.bid.W2]
-all.bid.M1 <- data[,n.all.bid.M1]
-all.bid.M3 <- data[,n.all.bid.M3]
-all.bid.M6 <- data[,n.all.bid.M6]
-all.bid.M9 <- data[,n.all.bid.M9]
-all.bid.Y1 <- data[,n.all.bid.Y1]
-
-#network.x
 aenet.myl.ON <- aenet.fix(data = merge(all.bid.ON,bond), fix = 250, start.point = "NULL",end.point = "NULL")$Coef
 aenet.myl.W1 <- aenet.fix(data = merge(all.bid.W1,bond), fix = 250, start.point = "NULL",end.point = "NULL")$Coef
 aenet.myl.W2 <- aenet.fix(data = merge(all.bid.W2,bond), fix = 250, start.point = "NULL",end.point = "NULL")$Coef
@@ -703,6 +707,70 @@ aenet.myl.M3 <- aenet.fix(data = merge(all.bid.M3,bond), fix = 250, start.point 
 aenet.myl.M6 <- aenet.fix(data = merge(all.bid.M6,bond), fix = 250, start.point = "NULL",end.point = "NULL")$Coef
 aenet.myl.M9 <- aenet.fix(data = merge(all.bid.M9,bond), fix = 250, start.point = "NULL",end.point = "NULL")$Coef
 aenet.myl.Y1 <- aenet.fix(data = merge(all.bid.Y1,bond), fix = 250, start.point = "NULL",end.point = "NULL")$Coef
+
+aenet.myl.long <- list()
+aenet.myl.short <- list()
+aenet.myl.all <- list()
+for (i in 1:length(aenet.myl.ON)) {
+  ON <- aenet.myl.ON[[i]];ON[is.na(ON)] <- 0
+  W1 <- aenet.myl.W1[[i]];W1[is.na(W1)] <- 0
+  W2 <- aenet.myl.W2[[i]];W2[is.na(W2)] <- 0
+  M1 <- aenet.myl.M1[[i]];M1[is.na(M1)] <- 0
+  M3 <- aenet.myl.M3[[i]];M3[is.na(M3)] <- 0
+  M6 <- aenet.myl.M6[[i]];M6[is.na(M6)] <- 0
+  M9 <- aenet.myl.M9[[i]];M9[is.na(M9)] <- 0
+  Y1 <- aenet.myl.Y1[[i]];Y1[is.na(Y1)] <- 0
+  aenet.myl.short[[i]] <- (ON+W1+W2+M1)/4
+  aenet.myl.long[[i]] <- (M3+M6+M9+Y1)/4
+  aenet.myl.all[[i]] <- (ON+W1+W2+M1+M3+M6+M9+Y1)/8
+  ##print(i)
+}
+for (i in 1:n) {
+  temp <- aenet.myl.all[[i]][1:10,1:10]
+  if(sum(temp==0)==100){
+    print(i)
+  }
+}
+
+n <- length(aenet.myl.ON)
+locate.na.ON <- c()
+locate.na.W1 <- c()
+locate.na.W2 <- c()
+locate.na.M1 <- c()
+locate.na.M3 <- c()
+locate.na.M6 <- c()
+locate.na.M9 <- c()
+locate.na.Y1 <- c()
+for (i in 1:n) {
+  temp <- aenet.myl.ON[[i]][1:10,1:10]
+  if(sum(is.na(temp))==100){print(i);locate.na.ON <- c(locate.na.ON,i)}
+  temp <- aenet.myl.W1[[i]][1:10,1:10]
+  if(sum(is.na(temp))==100){print(i);locate.na.W1 <- c(locate.na.W1,i)}
+  temp <- aenet.myl.W2[[i]][1:10,1:10]
+  if(sum(is.na(temp))==100){print(i);locate.na.W2 <- c(locate.na.W2,i)}
+  temp <- aenet.myl.M1[[i]][1:10,1:10]
+  if(sum(is.na(temp))==100){print(i);locate.na.M1 <- c(locate.na.M1,i)}
+  temp <- aenet.myl.M3[[i]][1:10,1:10]
+  if(sum(is.na(temp))==100){print(i);locate.na.M3 <- c(locate.na.M3,i)}
+  temp <- aenet.myl.M6[[i]][1:10,1:10]
+  if(sum(is.na(temp))==100){print(i);locate.na.M6 <- c(locate.na.M6,i)}
+  temp <- aenet.myl.M9[[i]][1:10,1:10]
+  if(sum(is.na(temp))==100){print(i);locate.na.M9 <- c(locate.na.M9,i)}
+  temp <- aenet.myl.Y1[[i]][1:10,1:10]
+  if(sum(is.na(temp))==100){print(i);locate.na.Y1 <- c(locate.na.Y1,i)}
+}
+
+for (j in 1:length(locate.na.ON)) {aenet.myl.ON[[locate.na.ON[j]]] <-aenet.myl.ON[[locate.na.ON[j]-1]]}
+for (j in 1:length(locate.na.W1)) {aenet.myl.W1[[locate.na.W1[j]]] <-aenet.myl.W1[[locate.na.W1[j]-1]]}
+for (j in 1:length(locate.na.W2)) {aenet.myl.W2[[locate.na.W2[j]]] <-aenet.myl.W2[[locate.na.W2[j]-1]]}
+for (j in 1:length(locate.na.M1)) {aenet.myl.M1[[locate.na.M1[j]]] <-aenet.myl.M1[[locate.na.M1[j]-1]]}
+for (j in 1:length(locate.na.M3)) {aenet.myl.M3[[locate.na.M3[j]]] <-aenet.myl.M3[[locate.na.M3[j]-1]]}
+for (j in 1:length(locate.na.M6)) {aenet.myl.M6[[locate.na.M6[j]]] <-aenet.myl.M6[[locate.na.M6[j]-1]]}
+for (j in 1:length(locate.na.M9)) {aenet.myl.M9[[locate.na.M9[j]]] <-aenet.myl.M9[[locate.na.M9[j]-1]]}
+for (j in 1:length(locate.na.Y1)) {aenet.myl.Y1[[locate.na.Y1[j]]] <-aenet.myl.Y1[[locate.na.Y1[j]-1]]}
+
+
+
 save(aenet.myl.ON,
      aenet.myl.W1,
      aenet.myl.W2,
@@ -711,9 +779,12 @@ save(aenet.myl.ON,
      aenet.myl.M6,
      aenet.myl.M9,
      aenet.myl.Y1,
+     aenet.myl.short,
+     aenet.myl.long,
+     aenet.myl.all,
      file="data/Rdata/DailyShiborBidAenet.Rdata")  
-#aenet.dygraph(aenet.myl.ON)
-load("data/Rdata/DailyShiborBidAenet.Rdata")
+
+#load("data/Rdata/DailyShiborBidAenet.Rdata")
 aenet.dygraph(aenet.myl.ON,"ON")
 aenet.dygraph(aenet.myl.W1,"W1")
 aenet.dygraph(aenet.myl.W2,"W2")
@@ -722,28 +793,17 @@ aenet.dygraph(aenet.myl.M3,"M3")
 aenet.dygraph(aenet.myl.M6,"M6")
 aenet.dygraph(aenet.myl.M9,"M9")
 aenet.dygraph(aenet.myl.Y1,"Y1")
+aenet.dygraph(aenet.myl.short,"short")
+aenet.dygraph(aenet.myl.long,"long")
+aenet.dygraph(aenet.myl.all,"all")
+
 
 for (i in 1:length(aenet.myl.ON)) {
   print(100-sum(is.na(aenet.myl.ON[[i]][1:10,1:10])))
 }
 
-aenet.myl.long <- list()
-aenet.myl.short <- list()
-for (i in 1:length(aenet.myl.ON)) {
-  ON <- aenet.myl.ON[[i]];ON[is.na(ON)] <- 0
-  W1 <- aenet.myl.W1[[i]];W1[is.na(W1)] <- 0
-  W2 <- aenet.myl.W2[[i]];W2[is.na(W2)] <- 0
-  M1 <- aenet.myl.M1[[i]];M1[is.na(M1)] <- 0
-  M3 <- aenet.myl.M3[[i]];M3[is.na(M3)] <- 0
-  M6 <- aenet.myl.M6[[i]];M6[is.na(M6)] <- 0
-  M9 <- aenet.myl.M9[[i]];ON[is.na(M9)] <- 0
-  Y1 <- aenet.myl.Y1[[i]];ON[is.na(Y1)] <- 0
-  aenet.myl.short[[i]] <- (ON+W1+W2+M1)/4
-  aenet.myl.long[[i]] <- (M3+M6+M9+Y1)/4
-  print(i)
-}
-aenet.dygraph(aenet.myl.short,"short")
-aenet.dygraph(aenet.myl.long,"long")
+
+
 
 for (i in 1:length(aenet.myl.ON)) {
   aenet.myl.short[[i]][aenet.myl.short[[i]]==0] <-NA

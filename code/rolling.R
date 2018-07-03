@@ -2,7 +2,7 @@
 timestart <- Sys.time()
 #####################################################################
 ID <- "F"
-network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#VECM.GIR.OR
+network.y.type <- "M6"#shor long all VECM VAR ON W1 W2 M1 M3 M6 M9 Y1
 inclusion.edgecov <- c("rolling")
 trans <- c("y","rolling")
 #setting###########################################################################################
@@ -11,7 +11,7 @@ set <- filename
 triangle <- "all"
 directed <- T
 BidType <- "aenet"
-MCMLE.maxit <- 50
+MCMLE.maxit <- 40
 inclusion.cyclicalweights <- F
 inclusion.mutual <- F
 inclusion.nodecovar <- F
@@ -25,6 +25,43 @@ inclusion.nodeocov <- NULL
 inclusion.nodeicov <- NULL
 inclusion.absdiff <- NULL
 ###########################################################################################
+#library
+###########################################################################################
+library(devtools)
+library(dplyr)
+library(dygraphs)
+library(ergm.count)
+library(ergm)
+library(frequencyConnectedness)
+library(gcdnet)
+library(ggplot2)
+library(glmnet)
+library(htmlwidgets)
+#library(igraph)
+library(latentnet)
+library(lubridate)
+library(magrittr)
+library(miscTools)
+library(msaenet)
+#library(networkD3)
+library(NetworkRiskMeasures)
+library(plyr)
+library(rbokeh)
+library(readxl)
+library(reshape2)
+library(tcltk)
+#library(ts)
+library(tsDyn)
+library(TTR)
+library(vars)
+library(VIM) 
+library(xlsx)
+library(xtable)
+library(xts)
+source("code/function.R")
+source("code/functionInterbank.R")
+source("code/functionNewRMB.R")
+###########################################################################################
 #shibor
 ###########################################################################################
 n.is.higher <- c("O.N","X1W","X2W","X1M","X3M","X6M","X9M","sum","crisis.sma20","crisis")
@@ -36,81 +73,71 @@ is.higher <- data[,n.is.higher]
 # network.y shibor bid
 ###########################################################################################
 load(file="data/Rdata/DailyShiborBidAenet.Rdata")
-aenet.myl.long <- list()
-aenet.myl.short <- list()
-for (i in 1:length(aenet.myl.ON)) {
-  ON <- aenet.myl.ON[[i]];ON[is.na(ON)] <- 0
-  W1 <- aenet.myl.W1[[i]];W1[is.na(W1)] <- 0
-  W2 <- aenet.myl.W2[[i]];W2[is.na(W2)] <- 0
-  M1 <- aenet.myl.M1[[i]];M1[is.na(M1)] <- 0
-  M3 <- aenet.myl.M3[[i]];M3[is.na(M3)] <- 0
-  M6 <- aenet.myl.M6[[i]];M6[is.na(M6)] <- 0
-  M9 <- aenet.myl.M9[[i]];ON[is.na(M9)] <- 0
-  Y1 <- aenet.myl.Y1[[i]];ON[is.na(Y1)] <- 0
-  aenet.myl.short[[i]] <- (ON+W1+W2+M1)/4
-  aenet.myl.long[[i]] <- (M3+M6+M9+Y1)/4
-  print(i)
-}
-if(network.y.type="short"){
+if(network.y.type=="short"){
   temp.list <- aenet.myl.short
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
-if(network.y.type="long"){
+if(network.y.type=="long"){
   temp.list <- aenet.myl.long
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
-if(network.y.type="ON"){
+if(network.y.type=="all"){
+  temp.list <- aenet.myl.all
+  network.y <- temp.list[-1]
+  rolling <- temp.list[-length(temp.list)]
+}
+if(network.y.type=="ON"){
   temp.list <- aenet.myl.ON
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
-if(network.y.type="W1"){
+if(network.y.type=="W1"){
   temp.list <- aenet.myl.W1
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
-if(network.y.type="W2"){
+if(network.y.type=="W2"){
   temp.list <- aenet.myl.W2
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
-if(network.y.type="M1"){
+if(network.y.type=="M1"){
   temp.list <- aenet.myl.M1
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
-if(network.y.type="M3"){
+if(network.y.type=="M3"){
   temp.list <- aenet.myl.M3
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
-if(network.y.type="M6"){
+if(network.y.type=="M6"){
   temp.list <- aenet.myl.M6
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
-if(network.y.type="M9"){
+if(network.y.type=="M9"){
   temp.list <- aenet.myl.M9
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
-if(network.y.type="Y1"){
+if(network.y.type=="Y1"){
   temp.list <- aenet.myl.Y1
   network.y <- temp.list[-1]
   rolling <- temp.list[-length(temp.list)]
 }
 
-#for (i in 1:length(aenet.myl.Y1)) {
-#  temp <- aenet.myl.Y1[[i]][1:10,1:10]
-#  if(100-sum(is.na(temp))==100){print(i)}
-#}
+for (i in 1:length(aenet.myl.long)) {
+  temp <- aenet.myl.long[[i]][1:10,1:10]
+  if(sum(is.na(temp))==100){print(i)}
+}
 
 ###########################################################################################
 # network.y sp
 ###########################################################################################
-if(network.y.type="VAR"){
+if(network.y.type=="VAR"){
   load(file = "data/Rdata/latex_daily.var.gir.Rdata")
   daily.var.gir <- list()
   for (i in 1:length(daily.var.gir0)) {
@@ -130,7 +157,7 @@ if(network.y.type="VAR"){
   Date <- Date[-c(1:251)]
 }
 
-if(network.y.type="VECM"){
+if(network.y.type=="VECM"){
   load(file = "data/Rdata/latex_daily.vecm.gir.Rdata")
   daily.vecm.gir <- list()
   for (i in 1:length(daily.vecm.gir0)) {
@@ -163,11 +190,13 @@ dyErgm.result <- dyCoefErgm.yearly(data = network.y, set = set,
                                    Date = Date,
                                    trans = trans, 
                                    BidType = BidType,
-                                   MCMLE.maxit = 20,
+                                   MCMLE.maxit = MCMLE.maxit,
                                    triangle = triangle,
                                    directed = directed,
                                    tab = F,fig = T,
-                                   is.higher = is.higher
+                                   is.higher = is.higher,
+                                   csv = T
+                                   
 )
 
 
