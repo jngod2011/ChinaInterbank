@@ -2,7 +2,7 @@
 timestart <- Sys.time()
 #####################################################################
 ID <- "F"
-network.y.type <- "long"#shor long all VECM VAR ON W1 W2 M1 M3 M6 M9 Y1
+network.y.type <- "M9"#shor long all VECM VAR ON W1 W2 M1 M3 M6 M9 Y1
 inclusion.edgecov <- c("rolling")
 trans <- c("y","rolling")
 #setting###########################################################################################

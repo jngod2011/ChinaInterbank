@@ -1135,15 +1135,67 @@ dyCoefErgm.yearly <- function(data, set,
                       names.eval="weight")
     ########################################################################
     if(!missing(wind)){
+      inclusion.wind <- c(inclusion.nodecov,
+                          inclusion.nodeocov,
+                          inclusion.nodeicov,
+                          inclusion.absdiff)
+      
       temp.wind <- wind[[i]]
-      temp.y %v% "ass" <- temp.wind$ass %>% log #资产总计(万元)
-      temp.y %v% "dbt" <- temp.wind$dbt %>% log #负债合计(万元)
-      temp.y %v% "rsr" <- temp.wind$rsr  %>% log #一般风险准备(万元)
-      temp.y %v% "sty" <- temp.wind$income.fee/temp.wind$income #手续费及佣金收入(万元)/营业收入(万元)
-      temp.y %v% "ltc" <- temp.wind$ltc  %>% log #现金及存放中央银行款项(万元)
-      temp.y %v% "bfc" <- temp.wind$bfc %>% log #"向中央银行借款(万元)"
-      temp.y %v% "lnd" <- temp.wind$lnd %>% log #"拆出资金(万元)"
-      temp.y %v% "brr" <- temp.wind$brr  %>% log #"拆入资金(万元)"
+      if(!is.na(match("oinc",inclusion.wind))){temp.y %v% "oinc" <- temp.wind$oinc} #营业收入(万元) 
+      if(!is.na(match("niinc",inclusion.wind))){temp.y %v% "niinc" <- temp.wind$niinc} #利息净收入(万元)
+      if(!is.na(match("iinc",inclusion.wind))){temp.y %v% "iinc" <- temp.wind$iinc} #利息收入(万元)
+      if(!is.na(match("iexp",inclusion.wind))){temp.y %v% "iexp" <- temp.wind$iexp} #利息支出(万元)
+      if(!is.na(match("fcninc",inclusion.wind))){temp.y %v% "fcninc" <- temp.wind$fcninc} #手续费及佣金净收入(万元)
+      if(!is.na(match("fcinc",inclusion.wind))){temp.y %v% "fcinc" <- temp.wind$fcinc} #手续费及佣金收入(万元)
+      if(!is.na(match("fcexp",inclusion.wind))){temp.y %v% "fcexp" <- temp.wind$fcexp} #手续费及佣金支出(万元)
+      if(!is.na(match("oexp",inclusion.wind))){temp.y %v% "oexp" <- temp.wind$oexp} #营业支出(万元)
+      if(!is.na(match("bt",inclusion.wind))){temp.y %v% "bt" <- temp.wind$bt} #营业税费(万元)
+      if(!is.na(match("mfee",inclusion.wind))){temp.y %v% "mfee" <- temp.wind$mfee} #管理费用(万元)
+      if(!is.na(match("oprf",inclusion.wind))){temp.y %v% "oprf" <- temp.wind$oprf} #营业利润(万元)
+      if(!is.na(match("noinc",inclusion.wind))){temp.y %v% "noinc" <- temp.wind$noinc} #营业外收入(万元)
+      if(!is.na(match("noexp",inclusion.wind))){temp.y %v% "noexp" <- temp.wind$noexp} #营业外支出(万元)
+      if(!is.na(match("nprf",inclusion.wind))){temp.y %v% "nprf" <- temp.wind$nprf} #净利润(万元)
+      if(!is.na(match("tprf",inclusion.wind))){temp.y %v% "tprf" <- temp.wind$tprf} #利润总额(万元)
+      if(!is.na(match("itax",inclusion.wind))){temp.y %v% "itax" <- temp.wind$itax} #所得税(万元)
+      if(!is.na(match("msgl",inclusion.wind))){temp.y %v% "msgl" <- temp.wind$msgl} #少数股东损益(万元)
+      if(!is.na(match("npto",inclusion.wind))){temp.y %v% "npto" <- temp.wind$npto} #归属于母公司所有者的净利润(万元)
+      if(!is.na(match("beps",inclusion.wind))){temp.y %v% "beps" <- temp.wind$beps} #基本每股收益(万/股)
+      if(!is.na(match("deps",inclusion.wind))){temp.y %v% "deps" <- temp.wind$deps} #稀释每股收益(元/股)
+      if(!is.na(match("cdcb",inclusion.wind))){temp.y %v% "cdcb" <- temp.wind$cdcb} #现金及存放中央银行款项(万元)
+      if(!is.na(match("dbrr",inclusion.wind))){temp.y %v% "dbrr" <- temp.wind$dbrr} #存放同业和其它金融机构款项(万元)
+      if(!is.na(match("lnd",inclusion.wind))){temp.y %v% "lnd" <- temp.wind$lnd} #拆出资金(万元)
+      if(!is.na(match("tfa",inclusion.wind))){temp.y %v% "tfa" <- temp.wind$tfa} #交易性金融资产(万元)
+      if(!is.na(match("dfa",inclusion.wind))){temp.y %v% "dfa" <- temp.wind$dfa} #衍生金融资产(万元)
+      if(!is.na(match("ir",inclusion.wind))){temp.y %v% "ir" <- temp.wind$ir} #应收利息(万元)
+      if(!is.na(match("la",inclusion.wind))){temp.y %v% "la" <- temp.wind$la} #发放贷款及垫款(万元)
+      if(!is.na(match("asfa",inclusion.wind))){temp.y %v% "asfa" <- temp.wind$asfa} #可供出售金融资产(万元)
+      if(!is.na(match("fa",inclusion.wind))){temp.y %v% "fa" <- temp.wind$fa} #固定资产(万元)
+      if(!is.na(match("asst",inclusion.wind))){temp.y %v% "asst" <- temp.wind$asst} #资产总计(万元)
+      if(!is.na(match("dlnd",inclusion.wind))){temp.y %v% "dlnd" <- temp.wind$dlnd} #同业和其它金融机构存放款项(万元)
+      if(!is.na(match("bfc",inclusion.wind))){temp.y %v% "bfc" <- temp.wind$bfc} #向中央银行借款(万元)
+      if(!is.na(match("brr",inclusion.wind))){temp.y %v% "brr" <- temp.wind$brr} #拆入资金(万元)
+      if(!is.na(match("ad",inclusion.wind))){temp.y %v% "ad" <- temp.wind$ad} #吸收存款(万元)
+      if(!is.na(match("tp",inclusion.wind))){temp.y %v% "tp" <- temp.wind$tp} #应交税费(万元)
+      if(!is.na(match("ip",inclusion.wind))){temp.y %v% "ip" <- temp.wind$ip} #应付利息(万元)
+      if(!is.na(match("lblt",inclusion.wind))){temp.y %v% "lblt" <- temp.wind$lblt} #负债合计(万元)
+      if(!is.na(match("sc",inclusion.wind))){temp.y %v% "sc" <- temp.wind$sc} #股本(万元)
+      if(!is.na(match("cr",inclusion.wind))){temp.y %v% "cr" <- temp.wind$cr} #资本公积金(万元)
+      if(!is.na(match("ssf",inclusion.wind))){temp.y %v% "ssf" <- temp.wind$ssf} #盈余公积金(万元)
+      if(!is.na(match("uprf",inclusion.wind))){temp.y %v% "uprf" <- temp.wind$uprf} #未分配利润(万元)
+      if(!is.na(match("grp",inclusion.wind))){temp.y %v% "grp" <- temp.wind$grp} #一般风险准备(万元)
+      if(!is.na(match("tetp",inclusion.wind))){temp.y %v% "tetp" <- temp.wind$tetp} #归属于母公司所有者权益合计(万元)
+      if(!is.na(match("toe",inclusion.wind))){temp.y %v% "toe" <- temp.wind$toe} #所有者权益合计(万元)
+      if(!is.na(match("tle",inclusion.wind))){temp.y %v% "tle" <- temp.wind$tle} #负债及股东权益总计(万元)
+      if(!is.na(match("nid",inclusion.wind))){temp.y %v% "nid" <- temp.wind$nid} #客户存款和同业存放款项净增加额(万元)
+      if(!is.na(match("nilcb",inclusion.wind))){temp.y %v% "nilcb" <- temp.wind$nilcb} #向中央银行借款净增加额(万元)
+      if(!is.na(match("niff",inclusion.wind))){temp.y %v% "niff" <- temp.wind$niff} #向其他金融机构拆入资金净增加额(万元)
+      if(!is.na(match("rniif",inclusion.wind))){temp.y %v% "rniif" <- temp.wind$rniif} #收取利息和手续费净增加额(万元)
+      if(!is.na(match("roc",inclusion.wind))){temp.y %v% "roc" <- temp.wind$roc} #收到其他与经营活动有关的现金(万元)
+      if(!is.na(match("scfo",inclusion.wind))){temp.y %v% "scfo" <- temp.wind$scfo} #经营活动现金流入小计(万元)
+      if(!is.na(match("nicla",inclusion.wind))){temp.y %v% "nicla" <- temp.wind$nicla} #客户贷款及垫款净增加额(万元)
+      if(!is.na(match("ncfo",inclusion.wind))){temp.y %v% "ncfo" <- temp.wind$ncfo} #客户贷款及垫款净增加额(万元)
+      if(!is.na(match("ncfi",inclusion.wind))){temp.y %v% "ncfi" <- temp.wind$ncfi} #投资活动产生的现金流量净额(万元)
+      if(!is.na(match("ncff",inclusion.wind))){temp.y %v% "ncff" <- temp.wind$ncff} #筹资活动产生的现金流量净额(万元)
       temp.y %v% "ecl" <- c("SOB","SOB","SOB","SOB","JECB","JECB","JECB","JECB","JECB",
                             "UCB")
     }
@@ -1153,10 +1205,22 @@ dyCoefErgm.yearly <- function(data, set,
     
     if(!missing(inclusion.edgecov) & !is.null(inclusion.edgecov)){
       if(!is.na(match("loan",inclusion.edgecov))){
-        temp.loan <- loan.network[[i]] %>% log  ;#temp.loan <- apply(temp.loan, c(1,2), round);
+        temp.loan <- loan.network[[i]]# %>% log  ;#temp.loan <- apply(temp.loan, c(1,2), round);
         diag(temp.loan) <- 0;temp.loan[is.na(temp.loan)] <- 0
         temp.loan <- as.matrix(temp.loan,nnode,nnode)
         if(!is.na(match("loan",trans))){temp.loan <- t(temp.loan)}
+      }
+      if(!is.na(match("deposit",inclusion.edgecov))){
+        temp.deposit <- deposit.network[[i]]# %>% log  ;#temp.loan <- apply(temp.loan, c(1,2), round);
+        diag(temp.deposit) <- 0;temp.deposit[is.na(temp.deposit)] <- 0
+        temp.deposit <- as.matrix(temp.deposit,nnode,nnode)
+        if(!is.na(match("deposit",trans))){temp.deposit <- t(temp.deposit)}
+      }
+      if(!is.na(match("compound",inclusion.edgecov))){
+        temp.compound <- compound.network[[i]]# %>% log  ;#temp.loan <- apply(temp.loan, c(1,2), round);
+        diag(temp.compound) <- 0;temp.compound[is.na(temp.compound)] <- 0
+        temp.compound <- as.matrix(temp.compound,nnode,nnode)
+        if(!is.na(match("compound",trans))){temp.compound <- t(temp.compound)}
       }
       if(!is.na(match("rolling",inclusion))){
         temp.rolling <- rolling[[i]][1:nnode,1:nnode] * (10^scale)  ;#temp.ON <- apply(temp.ON, c(1,2), round);
@@ -1215,6 +1279,11 @@ dyCoefErgm.yearly <- function(data, set,
             temp.long <- aenet.myl.long[[i]][1:nnode,1:nnode] * (10^scale) ;
             diag(temp.long) <- 0;temp.long[is.na(temp.long)] <- 0
             if(!is.na(match("long",trans))){temp.long <- t(temp.long)}
+          }
+          if(!is.na(match("all",inclusion.edgecov))){
+            temp.all <- aenet.myl.all[[i]][1:nnode,1:nnode] * (10^scale) ;
+            diag(temp.all) <- 0;temp.all[is.na(temp.all)] <- 0
+            if(!is.na(match("all",trans))){temp.all <- t(temp.all)}
           }
         }
         if(BidType == "vecm.gir"){
@@ -1468,12 +1537,12 @@ dyCoefErgm.yearly <- function(data, set,
     setTxtProgressBar(pb, i)
     
     if(csv){
-      timeend <- Sys.time()
-      runningtime<-timeend-timestart
-      if(runningtime/60 > 60*36-30){
-        file.path<-paste0("data/Rdata/", file.name,".Rdata")
-        save(coef.ergm.l,p.ergm.l,std.ergm.l,file = file.path)
-      }
+      #timeend <- Sys.time()
+      #runningtime<-timeend-timestart
+      #if(runningtime/60 > 60*36-30){
+      file.path<-paste0("data/Rdata/", file.name,".Rdata")
+      save(coef.ergm.l,p.ergm.l,std.ergm.l,file = file.path)
+      #}
     }
   }
   close(pb)

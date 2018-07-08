@@ -111,7 +111,7 @@ print(summary.shibor,
       comment = "TRUE"
 )
 #################################################################
-# combas
+# combas draw loan and deposit network
 #################################################################
 raw.data <- read_excel(path = "data/bank_combas.xlsx",
                        sheet = 1,
@@ -127,9 +127,11 @@ combas.date <- unique(raw.data$会计期间)
 combas.date <- combas.date[order(combas.date)]
 p.matrix <- list()
 matrix <- list()
+d.matrix <- list()
+p.d.matrix <- list()
 data.interbank <- list()
 p.matrix <- list()
-for (i in 17:length(combas.date)) {
+for (i in 1:length(combas.date)) {
   data <- filter(raw.data,  报表类型编码 == "A" & 会计期间 == combas.date[[i]])
   data[is.na(data)] <- 0
   data$银行类型 <- rep("Urban Commercial Banks", nrow(data))
@@ -155,20 +157,31 @@ for (i in 17:length(combas.date)) {
   
   data$银行类型 <- factor(data$银行类型, order = TRUE, levels = c("State-Owned Banks","Joint-Equity Commercial Banks","Urban Commercial Banks", "Rural Commercial Banks", "Policy Banks"))
   data <- data[order(data$银行类型,decreasing = F),] 
-  
+  #View(data[locate,]$存放同业款项)
   #maximum entropy
   locate <- sapply(group.stockprice[bank10.abbr,"Cname"], grepl, data$银行中文简称)
   locate <- apply(locate, 2, which)
   locate <- locate %>% unlist
+  #
   EstimatedMatrix.me <- matrix_estimation(rowsums = data$拆出资金净额, colsums = data$拆入资金, method = "me", max.it = 1000, abs.tol = 0.001, verbose = TRUE)
   rownames(EstimatedMatrix.me) <- data$银行中文简称
   colnames(EstimatedMatrix.me) <- data$银行中文简称
-  
   matrix[[i]] <- EstimatedMatrix.me
   p.matrix[[i]] <- EstimatedMatrix.me[locate,locate]
+  #
+  EstimatedMatrix.me <- matrix_estimation(rowsums = data$存放同业款项, colsums = data$`其中：同业及其他金融机构存放款项`, method = "me", max.it = 1000, abs.tol = 0.001, verbose = TRUE)
+  rownames(EstimatedMatrix.me) <- data$银行中文简称
+  colnames(EstimatedMatrix.me) <- data$银行中文简称
+  d.matrix[[i]] <- EstimatedMatrix.me
+  p.d.matrix[[i]] <- EstimatedMatrix.me[locate,locate]
   
   data.interbank[[i]] <- data
 }
+save(matrix, p.matrix, d.matrix, p.d.matrix,file = "data/Rdata/latex_combas.Rdata")
+#################################################################
+# combas draw loan
+#################################################################
+load(file = "data/Rdata/latex_combas.Rdata")
 max.matrix <- unlist(matrix) %>% max
 #
 for (i in 1:length(data.interbank)) {
@@ -200,6 +213,59 @@ for (i in 1:length(data.interbank)) {
                          height = 700 , width = 700, bounded = F, zoom = T, charge = -1000)
   widget2png(rbokeh , file = paste0("latex/report/figure/Allinterbank", substr(combas.date[i],1,4), ".png"), timeout = 1200)
 }
+#################################################################
+# combas desity and power law
+#################################################################
+load(file = "data/Rdata/latex_combas.Rdata")#2000:2016
+max.matrix <- unlist(matrix) %>% max
+matrix <- lapply(matrix,
+                 FUN = function(x){
+                   y <- x/max.matrix*20
+                   return(y)})
+# density
+density.pl <- lapply(matrix, sum) %>% unlist
+density.length <- (lapply(matrix, length) %>% unlist)^(1/2)
+density.pl <- density.pl/density.length
+density.pl <- xts(density.pl, as.Date(paste0(seq(2000,2016,1),"-06-30"), format='%Y-%m-%d'))
+
+# largest 10
+for (i in 9:17) {
+  x <- matrix[[i]] %>% as.numeric
+  plot(x[order(-x)])
+}
+
+# alpha of power law
+xmin <- matrix %>% unlist
+length(xmin)*0.1
+xmin <- xmin[order(-xmin)][1:26000]
+plot(xmin)
+xmin <- xmin[order(-xmin)][52095]
+alpha.pl <- lapply(matrix[9:17], FUN = function(x){
+  y <- power.law.fit(x, xmin = NULL, start = 2)$alpha
+  return(y)
+})
+alpha.pl <- xts(alpha.pl %>% unlist, as.Date(paste0(seq(2000,2016,1)[9:17],"-06-30"), format='%Y-%m-%d'))
+
+
+
+dy.data <- merge(alpha.pl["2008-01-03/2016-12-30"],density.pl["2008-01-03/2016-12-30"], is.higher$crisis.sma20)
+#dy.data <- merge(alpha.pl["2008-01-03/2016-12-30"],alpha.pl1["2008-01-03/2016-12-30"], is.higher$crisis.sma20)
+#names(dy.data) <- c("0","1","Crisis")
+names(dy.data) <- c("alpha of power law","density","Crisis")
+dy.date <- index(dy.data) %>% as.character
+dy.data <- apply(X = dy.data, MARGIN = 2,FUN = replace.na.near)
+dy.data <- xts(dy.data, as.Date(dy.date, format='%Y-%m-%d'))
+
+
+color <- c("blue","red","gray")#colorRampPalette(c("red", "blue"))(3)
+dygraph.interbank(dy.data = dy.data, dy.main, color, begin.dateWindow = index(dy.data)[1]) %>%
+  dyAxis("y", label = "Coefficients", independentTicks = T) %>%
+  dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
+  dySeries("Crisis", label = "Crisis", color = "black", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2") %>%
+  dyLimit(1, color = "gray") %>%
+  dyLimit(2, color = "gray") %>%
+  dyAxis("y", valueRange = c(0, 2.5))
+
 #################################################################
 # trimed interbank 10
 #################################################################
@@ -263,7 +329,7 @@ dygraph.interbank(dy.data, dy.main, color, begin.dateWindow =  as.Date("2006-01-
   dyAxis("y2", label = "Crisis", independentTicks = TRUE, drawGrid = F)
 
 #################################################################
-# data description of interbank market
+# save data used for drawing for combas
 #################################################################
 raw.data <- read_excel(path = "data/bank_combas.xlsx",
                        sheet = 1,
@@ -276,6 +342,11 @@ raw.data$银行中文简称[raw.data$银行中文简称 == "中国建设银行" 
 raw.data$银行中文简称[raw.data$银行中文简称 == "中国民生银行" ] <- "民生银行"
 raw.data$银行中文简称[raw.data$银行中文简称 == "中国农业银行" ] <- "农业银行"
 raw.data <- filter(raw.data,  报表类型编码 == "A")
+save(raw.data, file = "data/Rdata/latex_draw_combas.Rdata")
+#################################################################
+# data description of interbank market loan
+#################################################################
+load(file = "data/Rdata/latex_draw_combas.Rdata")
 raw.data <- raw.data[,c("银行中文简称", "会计期间","拆出资金净额","拆入资金")]
 raw.data <- melt(raw.data, id = c("会计期间", "银行中文简称"), variable.name = "Term", value.name = "Value", na.rm=T)
 raw.data <- dcast(raw.data, 会计期间 + Term ~ 银行中文简称, fun.aggregate = mean) %>% as.data.frame
@@ -287,13 +358,13 @@ interbank.l <- raw.data[raw.data$Term =="拆出资金净额",c("会计期间","�
 interbank.l$会计期间 <- paste0(c(2000:2016),c("-06-30"))
 interbank.l <- xts(interbank.l[,-1], as.Date(interbank.l$会计期间, format='%Y-%m-%d'))
 names(interbank.l)[1:10] <- bank10.abbr
-dy.data <- merge(interbank.l[,bank10.abbr]/10^11, is.higher$crisis.sma20)
+dy.data <- merge(interbank.l[,bank10.abbr]/10^12, is.higher$crisis.sma20)#scale#
 temp <- apply(X = dy.data, MARGIN = 2, FUN = replace.na.near)
 dy.data <- xts(temp, as.Date(index(dy.data), format='%Y-%m-%d'))
 colnames(dy.data)[ncol(dy.data)] <- "Crisis"
 dy.main <- "Interbank Lending"
 color <- c(group.stockprice[bank10.abbr,"color"],"gray")
-dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2007-01-01", format='%Y-%m-%d')) %>%
+dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2008-01-01", format='%Y-%m-%d')) %>%
   dyAxis("y", label = "Lending", independentTicks = T) %>%
   dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
   dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
@@ -303,13 +374,13 @@ interbank.b <- raw.data[raw.data$Term =="拆入资金",c("会计期间","交通�
 interbank.b$会计期间 <- paste0(c(2000:2016),c("-06-30"))
 interbank.b <- xts(interbank.b[,-1], as.Date(interbank.b$会计期间, format='%Y-%m-%d'))
 names(interbank.b)[1:10] <- bank10.abbr
-dy.data <- merge(interbank.b[,bank10.abbr]/10^11, is.higher$crisis.sma20)
+dy.data <- merge(interbank.b[,bank10.abbr]/10^12, is.higher$crisis.sma20)#scale#
 temp <- apply(X = dy.data, MARGIN = 2, FUN = replace.na.near)
 dy.data <- xts(temp, as.Date(index(dy.data), format='%Y-%m-%d'))
 colnames(dy.data)[ncol(dy.data)] <- "Crisis"
 dy.main <- "Interbank Borrowing"
 color <- c(group.stockprice[bank10.abbr,"color"],"gray")
-dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2007-01-01", format='%Y-%m-%d')) %>%
+dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2008-01-01", format='%Y-%m-%d')) %>%
   dyAxis("y", label = "Borrowing", independentTicks = T) %>%
   dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
   dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
@@ -320,13 +391,101 @@ dy.data <- merge(interbank.p, is.higher$crisis.sma20)
 temp <- apply(X = dy.data, MARGIN = 2, FUN = replace.na.near)
 dy.data <- xts(temp, as.Date(index(dy.data), format='%Y-%m-%d'))
 colnames(dy.data)[ncol(dy.data)] <- "Crisis"
-dy.main <- "Proportion"
+dy.main <- "Loan Proportion"
 color <- c("red","blue","gray")
-dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2007-01-01", format='%Y-%m-%d')) %>%
+dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2008-01-01", format='%Y-%m-%d')) %>%
   dyAxis("y", label = "Proportion", independentTicks = T) %>%
+  dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
+  dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2") %>%
+  dyAxis("y", valueRange = c(0.3, 1.1))
+#################################################################
+# data description of interbank market deposit
+#################################################################
+load(file = "data/Rdata/latex_draw_combas.Rdata")
+raw.data <- filter(raw.data,  报表类型编码 == "A")
+raw.data <- raw.data[,c("银行中文简称", "会计期间","存放同业款项","其中：同业及其他金融机构存放款项")]
+raw.data <- melt(raw.data, id = c("会计期间", "银行中文简称"), variable.name = "Term", value.name = "Value", na.rm=T)
+raw.data <- dcast(raw.data, 会计期间 + Term ~ 银行中文简称, fun.aggregate = mean) %>% as.data.frame
+raw.data[is.na(raw.data)] <- 0
+raw.data$sum.all <- rowSums(raw.data[,-c(1,2)])
+raw.data$sum.10 <- rowSums(raw.data[,c("交通银行", "工商银行", "建设银行", "中国银行", "平安银行", "浦发银行", "华夏银行", "民生银行", "招商银行", "兴业银行", "中信银行", "宁波银行", "南京银行", "北京银行")])
+#lending
+interbank.l <- raw.data[raw.data$Term =="存放同业款项",c("会计期间","交通银行", "工商银行", "建设银行", "中国银行", "浦发银行", "华夏银行", "招商银行","兴业银行", "中信银行", "北京银行","sum.all","sum.10")] 
+interbank.l$会计期间 <- paste0(c(2000:2016),c("-06-30"))
+interbank.l <- xts(interbank.l[,-1], as.Date(interbank.l$会计期间, format='%Y-%m-%d'))
+names(interbank.l)[1:10] <- bank10.abbr
+dy.data <- merge(interbank.l[,bank10.abbr]/10^12, is.higher$crisis.sma20)#scale#
+temp <- apply(X = dy.data, MARGIN = 2, FUN = replace.na.near)
+dy.data <- xts(temp, as.Date(index(dy.data), format='%Y-%m-%d'))
+colnames(dy.data)[ncol(dy.data)] <- "Crisis"
+dy.main <- "Interbank Deposit Lending"
+color <- c(group.stockprice[bank10.abbr,"color"],"gray")
+dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2008-01-01", format='%Y-%m-%d')) %>%
+  dyAxis("y", label = "Deposit Lending", independentTicks = T) %>%
   dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
   dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
 
+#borrowing
+interbank.b <- raw.data[raw.data$Term =="其中：同业及其他金融机构存放款项",c("会计期间","交通银行", "工商银行", "建设银行", "中国银行", "浦发银行", "华夏银行", "招商银行","兴业银行", "中信银行", "北京银行","sum.all","sum.10")] 
+interbank.b$会计期间 <- paste0(c(2000:2016),c("-06-30"))
+interbank.b <- xts(interbank.b[,-1], as.Date(interbank.b$会计期间, format='%Y-%m-%d'))
+names(interbank.b)[1:10] <- bank10.abbr
+dy.data <- merge(interbank.b[,bank10.abbr]/10^12, is.higher$crisis.sma20)#scale#
+temp <- apply(X = dy.data, MARGIN = 2, FUN = replace.na.near)
+dy.data <- xts(temp, as.Date(index(dy.data), format='%Y-%m-%d'))
+colnames(dy.data)[ncol(dy.data)] <- "Crisis"
+dy.main <- "Interbank Deposit Borrowing"
+color <- c(group.stockprice[bank10.abbr,"color"],"gray")
+dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2008-01-01", format='%Y-%m-%d')) %>%
+  dyAxis("y", label = "Deposit Borrowing", independentTicks = T) %>%
+  dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
+  dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
+#proportion
+interbank.p <- merge(interbank.l$sum.10/interbank.l$sum.all,interbank.b$sum.10/interbank.b$sum.all)
+names(interbank.p) <- c("Deposit Lending","Deposit Borrowing")
+dy.data <- merge(interbank.p, is.higher$crisis.sma20)
+temp <- apply(X = dy.data, MARGIN = 2, FUN = replace.na.near)
+dy.data <- xts(temp, as.Date(index(dy.data), format='%Y-%m-%d'))
+colnames(dy.data)[ncol(dy.data)] <- "Crisis"
+dy.main <- "Deposit Proportion"
+color <- c("red","blue","gray")
+dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2008-01-01", format='%Y-%m-%d')) %>%
+  dyAxis("y", label = "Proportion", independentTicks = T) %>%
+  dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
+  dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2") %>%
+  dyAxis("y", valueRange = c(0.3, 1.01))
+#################################################################
+# data description of interbank market deposit and loan
+#################################################################
+load(file = "data/Rdata/latex_draw_combas.Rdata")
+raw.data <- raw.data[,c("银行中文简称", "会计期间","拆出资金净额","拆入资金","存放同业款项","其中：同业及其他金融机构存放款项")]
+raw.data <- melt(raw.data, id = c("会计期间", "银行中文简称"), variable.name = "Term", value.name = "Value", na.rm=T)
+raw.data[is.na(raw.data)] <- 0
+p.names <- c("交通银行", "工商银行", "建设银行", "中国银行", "浦发银行", "华夏银行", "招商银行","兴业银行", "中信银行", "北京银行")
+
+compound <- dcast(raw.data, 会计期间 ~ 银行中文简称, fun.aggregate = sum) %>% as.data.frame
+p.compound <- compound[,p.names] %>% rowSums
+a.compound <- compound[,-1] %>% rowSums
+
+loan <- raw.data[raw.data$Term=="拆出资金净额"|raw.data$Term=="拆入资金",]
+loan <- dcast(loan, 会计期间 ~ 银行中文简称, fun.aggregate = sum) %>% as.data.frame
+p.loan <- loan[,p.names] %>% rowSums
+a.loan <- loan[,-1] %>% rowSums
+
+deposit <- raw.data[raw.data$Term=="存放同业款项"|raw.data$Term=="其中：同业及其他金融机构存放款项",]
+deposit <- dcast(deposit, 会计期间 ~ 银行中文简称, fun.aggregate = sum) %>% as.data.frame
+p.deposit <- deposit[,p.names] %>% rowSums
+a.deposit <- deposit[,-1] %>% rowSums
+
+draw <- data.frame("Interbank Deposit" = round(p.deposit/a.compound*100), "Interbank Loan" = round(p.loan/a.compound*100), Year = 2000:2016)
+draw <- melt(draw, id = c("Year"), variable.name = "Type", value.name = "Proportion", na.rm=T)
+ 
+ggplot(data = draw, aes(x = Year, y = Proportion, fill = Type, frame = Year, cumulative = TRUE)) +
+  geom_col() +
+  labs(x = "Year", y = "Proportion", title = "", subtitle = "") +
+  geom_text(aes(label = Proportion), color = "Black", size = 5, position = position_stack(vjust = 0.5)) + 
+  #theme(axis.text.x = element_text(colour="Black",size=15), axis.text.y = element_text(colour="Black",size=15)) +
+          theme_minimal()
 #################################################################
 # bank list
 #################################################################
@@ -345,7 +504,7 @@ print(appendix.group,
       include.colnames = TRUE)
 
 #################################################################
-# summary wind
+# wind scale
 #################################################################
 group.stockprice[bank10.abbr,"Cname"]
 group.wind <- c("交通银行股份有限公司", 
@@ -362,6 +521,11 @@ group.wind <- c("交通银行股份有限公司",
                 #"宁波银行股份有限公司", 
                 #"南京银行股份有限公司", 
                 "北京银行股份有限公司")
+
+wind.name <- read_excel(path = "data/windname.xlsx",
+                        skip = 0,
+                        col_names = F,
+                        col_types = c("text", "text" , "text")) %>% as.data.frame
 
 fnlist.wind <- dir("data/wind")
 raw.wind <- list()
@@ -382,14 +546,34 @@ for(i in 1:length.fnlist){
   temp <- temp[locate,]
   #temp$公司名称 <- group[1,]
   rownames(temp) <- bank10.abbr
+  #colnames(temp) <- c()
+  temp$`向中央银行借款(万元)`[is.na(temp$`向中央银行借款(万元)`)] <- 0
+  temp$`向中央银行借款净增加额(万元)`[is.na(temp$`向中央银行借款净增加额(万元)`)] <- 0
+  temp$`向其他金融机构拆入资金净增加额(万元)`[is.na(temp$`向其他金融机构拆入资金净增加额(万元)`)] <- 0
+  temp$`客户存款和同业存放款项净增加额(万元)`[is.na(temp$`客户存款和同业存放款项净增加额(万元)`)] <- 0
+  temp$`客户贷款及垫款净增加额(万元)`[is.na(temp$`客户贷款及垫款净增加额(万元)`)] <- 0
+  temp <- subset(temp, select =  -`应付利息(万元)`)
+  temp <- subset(temp, select =  -`应收利息(万元)`)
+  temp <- subset(temp, select =  -`报告期`)
+  temp <- subset(temp, select =  -`公司名称`)
+  temp <- subset(temp, select =  -`数据来源`)
+  temp <- subset(temp, select =  -`基本每股收益(万/股)`)
+  temp <- subset(temp, select =  -`稀释每股收益(元/股)`)
+  
+  print(temp %>% is.na %>% sum)
+  onames <- names(temp)
+  names(temp) <- wind.name[,2][match(onames,wind.name[,1])]
+  temp <- temp*10000/(12^10)#scale#
+  #log(temp[1,] %>% abs,10) %>% ceiling
+  #log(temp$asst %>% abs,10) %>% ceiling
   raw.wind[[i]] <- temp
-  #cat(dim(raw.wind[[i]])[1]," ")
 }
-
-sum(is.na(raw.wind %>% unlist))
-raw.wind <- F.fill.up.NAs(raw.wind)#sum(is.na(raw.wind[[3]] %>% unlist))
-sum(is.na(raw.wind %>% unlist))#sum(is.na(raw.wind[[3]]$`拆出资金(万元)` %>% unlist))#sum(is.na(raw.wind[[3]]$`拆入资金(万元)` %>% unlist))
-
+raw.wind <- F.fill.up.NAs(raw.wind)
+save(raw.wind, file = "data/Rdata/latex_raw.wind.Rdata")
+load(file = "data/Rdata/latex_raw.wind.Rdata")
+#################################################################
+# summary wind
+#################################################################
 wind <- raw.wind[[1]]
 for (i in 2:length(raw.wind)) {
   temp <- raw.wind[[i]]
@@ -399,7 +583,12 @@ for (i in 2:length(raw.wind)) {
 names(wind)
 dim(wind)
 
-wind <- wind[,c("资产总计(万元)", "负债合计(万元)","手续费及佣金收入(万元)","营业收入(万元)","拆出资金(万元)","拆入资金(万元)")]/10^8
+wind <- wind[,c("资产总计(万元)",
+                "负债合计(万元)",
+                "手续费及佣金收入(万元)",
+                "营业收入(万元)",
+                "拆出资金(万元)",
+                "拆入资金(万元)")] %>% log
 wind$sty <- wind$`手续费及佣金收入(万元)`/wind$`营业收入(万元)`
 wind <- wind[,c("资产总计(万元)", "负债合计(万元)","拆出资金(万元)","拆入资金(万元)")]
 names(wind) <- c("ass","dbt","lnd","brr")
@@ -612,15 +801,17 @@ write.xlsx(table.COINtest.xlsx, file = paste0("latex/report/excel/COINtest", tab
 #################################################################
 # spillover var gir
 #################################################################
-daily.var.gir0 <- dy.VAR.GIR(data = g.sp, n.ahead = 0, mode = "fix", span = 250)[[1]]
-daily.var.gir1 <- dy.VAR.GIR(data = g.sp, n.ahead = 1, mode = "fix", span = 250)[[1]]
-daily.var.gir2 <- dy.VAR.GIR(data = g.sp, n.ahead = 2, mode = "fix", span = 250)[[1]]
-daily.var.gir3 <- dy.VAR.GIR(data = g.sp, n.ahead = 3, mode = "fix", span = 250)[[1]]
-daily.var.gir4 <- dy.VAR.GIR(data = g.sp, n.ahead = 4, mode = "fix", span = 250)[[1]]
-daily.var.gir5 <- dy.VAR.GIR(data = g.sp, n.ahead = 5, mode = "fix", span = 250)[[1]]
+#daily.var.gir0 <- dy.VAR.GIR(data = g.sp, n.ahead = 0, mode = "fix", span = 250)[[1]]
+#daily.var.gir1 <- dy.VAR.GIR(data = g.sp, n.ahead = 1, mode = "fix", span = 250)[[1]]
+#daily.var.gir2 <- dy.VAR.GIR(data = g.sp, n.ahead = 2, mode = "fix", span = 250)[[1]]
+#daily.var.gir3 <- dy.VAR.GIR(data = g.sp, n.ahead = 3, mode = "fix", span = 250)[[1]]
+#daily.var.gir4 <- dy.VAR.GIR(data = g.sp, n.ahead = 4, mode = "fix", span = 250)[[1]]
+#daily.var.gir5 <- dy.VAR.GIR(data = g.sp, n.ahead = 5, mode = "fix", span = 250)[[1]]
 #save(daily.var.gir0, daily.var.gir1, daily.var.gir2, daily.var.gir3, daily.var.gir4, daily.var.gir5, g.sp, file = "data/Rdata/latex_daily.var.gir.Rdata")
 load(file = "data/Rdata/latex_daily.var.gir.Rdata")
-index <- c()
+index.net <- c()
+index.to <- c()
+index.from <- c()
 for (i in 1:length(daily.var.gir0)) {
   GIR <- array(c(daily.var.gir0[[i]],
                  daily.var.gir1[[i]],
@@ -628,11 +819,13 @@ for (i in 1:length(daily.var.gir0)) {
                  daily.var.gir3[[i]],
                  daily.var.gir4[[i]],
                  daily.var.gir5[[i]]),dim = c(10,10,6))
-  temp <- weighted_gir(GIR, divided=1)$net_average
-  index <- rbind(index,temp)
+  temp <- weighted_gir(GIR, divided=1)
+  index.net <- rbind(index.net,temp$net_average)
+  index.to <- rbind(index.to,temp$to_average)
+  index.from <- rbind(index.from,temp$from_average)
 }
 
-dy.data <- xts(index, as.Date(index(sp), format='%Y-%m-%d')[-c(1:251)])
+dy.data <- xts(index.net, as.Date(index(sp)[-c(1:250)], format='%Y-%m-%d'))
 dy.data <- merge(dy.data, is.higher$crisis.sma20) %>% na.omit
 colnames(dy.data) <- c(bank10.abbr,"Crisis")
 dy.main <- "Spillover Index VAR GIR"
@@ -659,7 +852,9 @@ rank <- floor((rank.eigen + rank.trace)/2)#4
 #save(daily.vecm.gir0, daily.vecm.gir1, daily.vecm.gir2, daily.vecm.gir3, daily.vecm.gir4, daily.vecm.gir5, sp, file = "data/Rdata/latex_daily.vecm.gir.Rdata")
 load(file = "data/Rdata/latex_daily.vecm.gir.Rdata")
 
-index <- c()
+index.net <- c()
+index.to <- c()
+index.from <- c()
 for (i in 1:length(daily.vecm.gir0)) {
   GIR <- array(c(daily.vecm.gir0[[i]],
                  daily.vecm.gir1[[i]],
@@ -667,13 +862,13 @@ for (i in 1:length(daily.vecm.gir0)) {
                  daily.vecm.gir3[[i]],
                  daily.vecm.gir4[[i]],
                  daily.vecm.gir5[[i]]),dim = c(10,10,6))
-  #temp <- weighted_gir(GIR, divided=1)$net_average
-  temp <- weighted_gir(GIR, divided=1)$weighted.matrix %>% abs %>% t
-  temp <- rowSums(temp)/9
-  index <- rbind(index,temp)
+  temp <- weighted_gir(GIR, divided=1)
+  index.net <- rbind(index.net,temp$net_average)
+  index.to <- rbind(index.to,temp$to_average)
+  index.from <- rbind(index.from,temp$from_average)
 }
 
-dy.data <- xts(index, as.Date(index(sp), format='%Y-%m-%d')[-c(1:250)])
+dy.data <- xts(index.net, as.Date(index(sp), format='%Y-%m-%d')[-c(1:250)])
 dy.data <- merge(dy.data, is.higher$crisis.sma20) %>% na.omit
 colnames(dy.data) <- c(bank10.abbr,"Crisis")
 dy.main <- "Spillover Index VECM GIR"
@@ -815,5 +1010,11 @@ for (i in 1:length(aenet.myl.ON)) {
   print(100-sum(is.na(aenet.myl.long[[i]][1:10,1:10])))
 }
 
+x <- aenet.myl.W1[[1125]]
+y <- aenet.myl.W1[[1124]]
+x[is.na(x)] <- 0
+y[is.na(y)] <- 0
+x-y
 
+aenet.myl.W1[[1125]] - aenet.myl.W1[[1125]]
 
