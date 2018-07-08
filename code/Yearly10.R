@@ -9,7 +9,7 @@ inclusion.nodeicov <- c("asst", "lblt")
 inclusion.absdiff <- NULL
 #setting###########################################################################################
 set <- " "
-network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#VECM.GIR.OR
+network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#
 triangle <- "all"
 directed <- T
 BidType <- "aenet"
@@ -187,24 +187,7 @@ for (t in 1:(length(y.period)-2)) {
   
   aenet.myl.short[[t]] <- (aenet.myl.ON[[t]] + aenet.myl.W1[[t]] + aenet.myl.W2[[t]] + aenet.myl.M1[[t]])/4
   aenet.myl.long[[t]] <- (aenet.myl.M3[[t]] + aenet.myl.M6[[t]] + aenet.myl.M9[[t]] + aenet.myl.Y1[[t]])/4
-  
-  #temp <- dy.VAR.FEVD(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead =1, mode= "fix", span ="yearly")
-  #var.myl.fevd[[t]] <- matrix(temp$fevd.matrix %>% unlist,10,10) #%>% t
-  #colnames(var.myl.fevd[[t]]) <- bank10.abbr;rownames(var.myl.fevd[[t]]) <- bank10.abbr
-  
-  #temp <- dy.VAR.GIR(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead =1, mode= "fix", span ="yearly")
-  #var.myl.gir[[t]] <- matrix(temp$gir.matrix %>% unlist,10,10) #%>% t
-  #colnames(var.myl.gir[[t]]) <- bank10.abbr;rownames(var.myl.gir[[t]]) <- bank10.abbr
-  
-  #temp <- dy.VECM.FEVD(data = sp[paste0(y.period[t],"/",y.period[t+1])], group = names(sp), n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-  #vecm.myl.fevd[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) #%>% t
-  #colnames(vecm.myl.fevd[[t]]) <- bank10.abbr;rownames(vecm.myl.fevd[[t]]) <- bank10.abbr
-  
-  if(network.y.type == "VECM.GIR.OR"){
-    temp <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], group = names(sp), n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-    network.y[[t]] <- matrix(temp$gir.matrix %>% unlist,10,10) #%>% t
-    colnames(network.y[[t]]) <- bank10.abbr;rownames(network.y[[t]] ) <- bank10.abbr
-  }
+ 
   if(network.y.type == "VECM.GIR"){
     vecm.gir0 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir0 <- matrix(data = unlist(vecm.gir0),nrow =10,ncol = 10)
     vecm.gir1 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir1 <- matrix(data = unlist(vecm.gir1),nrow =10,ncol = 10)
@@ -222,9 +205,6 @@ for (t in 1:(length(y.period)-2)) {
     temp <- matrix(temp %>% unlist,10,10) #%>% t
     network.y[[t]] <- temp
     colnames(network.y[[t]]) <- bank10.abbr;rownames(network.y[[t]] ) <- bank10.abbr
-    print(t)
-    print(network.y.type)
-    print("############################")
   }
   if(network.y.type == "VAR.GIR"){
     var.gir0 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly", keep.var = T, rank = 4)[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow =10,ncol = 10)
@@ -246,7 +226,39 @@ for (t in 1:(length(y.period)-2)) {
   }
 }
 
-
+if(network.y.type=="short"){
+  network.y <- aenet.myl.short
+}
+if(network.y.type=="long"){
+  network.y <- aenet.myl.long
+}
+if(network.y.type=="all"){
+  network.y <- aenet.myl.all
+}
+if(network.y.type=="ON"){
+  network.y <- aenet.myl.ON
+}
+if(network.y.type=="W1"){
+  network.y <- aenet.myl.W1
+}
+if(network.y.type=="W2"){
+  network.y <- aenet.myl.W2
+}
+if(network.y.type=="M1"){
+  network.y <- aenet.myl.M1
+}
+if(network.y.type=="M3"){
+  network.y <- aenet.myl.M3
+}
+if(network.y.type=="M6"){
+  network.y <- aenet.myl.M6
+}
+if(network.y.type=="M9"){
+  network.y <- aenet.myl.M9
+}
+if(network.y.type=="Y1"){
+  network.y <- aenet.myl.Y1
+}
 #################################################################
 # basic setting
 dyErgm.result <- dyCoefErgm.yearly(data = network.y[1:8], set = set, 
