@@ -87,7 +87,7 @@ data <- cbind(shibor[,-1], as.data.frame(is.higher$crisis.sma20))
 names(data)[ncol(data)] <- "Crisis"
 dy.data <- xts(data, as.Date(shibor$Date, format='%Y-%m-%d'))
 dy.main <- "Shanghai Interbank Offered Rate from 2006 to 2018"
-color <- c(colorRampPalette(c("#880E4F", "white"))(5)[-5],colorRampPalette(c("black", "white"))(5)[-5], "black")
+color <- c(colorRampPalette(c("red", "white"))(5)[-5],colorRampPalette(c("blue", "white"))(5)[-5], "black")
 dygraph.interbank(dy.data, dy.main, color) %>% 
   dyAxis("y", label = "Shanghai Interbank Offered Rate", independentTicks = T) %>%
   dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
@@ -111,7 +111,7 @@ print(summary.shibor,
       comment = "TRUE"
 )
 #################################################################
-# combas draw loan and deposit network
+# load data for :combas draw loan and deposit network
 #################################################################
 raw.data <- read_excel(path = "data/bank_combas.xlsx",
                        sheet = 1,
@@ -179,7 +179,7 @@ for (i in 1:length(combas.date)) {
 }
 save(matrix, p.matrix, d.matrix, p.d.matrix,file = "data/Rdata/latex_combas.Rdata")
 #################################################################
-# combas draw loan
+# combas draw loan network
 #################################################################
 load(file = "data/Rdata/latex_combas.Rdata")
 max.matrix <- unlist(matrix) %>% max
@@ -344,7 +344,7 @@ raw.data$银行中文简称[raw.data$银行中文简称 == "中国农业银行" 
 raw.data <- filter(raw.data,  报表类型编码 == "A")
 save(raw.data, file = "data/Rdata/latex_draw_combas.Rdata")
 #################################################################
-# data description of interbank market loan
+# data draw of interbank market loan
 #################################################################
 load(file = "data/Rdata/latex_draw_combas.Rdata")
 raw.data <- raw.data[,c("银行中文简称", "会计期间","拆出资金净额","拆入资金")]
@@ -399,7 +399,7 @@ dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2008-01-01
   dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2") %>%
   dyAxis("y", valueRange = c(0.3, 1.1))
 #################################################################
-# data description of interbank market deposit
+# data draw of interbank market deposit
 #################################################################
 load(file = "data/Rdata/latex_draw_combas.Rdata")
 raw.data <- filter(raw.data,  报表类型编码 == "A")
@@ -455,7 +455,7 @@ dygraph.interbank(dy.data, dy.main, color,begin.dateWindow = as.Date("2008-01-01
   dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2") %>%
   dyAxis("y", valueRange = c(0.3, 1.01))
 #################################################################
-# data description of interbank market deposit and loan
+# proportion of deposit and loan in interbank market
 #################################################################
 load(file = "data/Rdata/latex_draw_combas.Rdata")
 raw.data <- raw.data[,c("银行中文简称", "会计期间","拆出资金净额","拆入资金","存放同业款项","其中：同业及其他金融机构存放款项")]
@@ -486,6 +486,35 @@ ggplot(data = draw, aes(x = Year, y = Proportion, fill = Type, frame = Year, cum
   geom_text(aes(label = Proportion), color = "Black", size = 5, position = position_stack(vjust = 0.5)) + 
   #theme(axis.text.x = element_text(colour="Black",size=15), axis.text.y = element_text(colour="Black",size=15)) +
           theme_minimal()
+#################################################################
+# data decription of loan and deposit data used to estimate networks
+#################################################################
+load(file = "data/Rdata/latex_draw_combas.Rdata")
+raw.data <- raw.data[,c("银行中文简称", "会计期间","拆出资金净额","拆入资金","存放同业款项","其中：同业及其他金融机构存放款项")]
+raw.data <- melt(raw.data, id = c("会计期间", "银行中文简称"), variable.name = "Term", value.name = "Value", na.rm=T)
+raw.data <- raw.data[raw.data$会计期间 > "2008-12-31",]
+raw.data[is.na(raw.data)] <- 0
+raw.data <- dcast(raw.data, 会计期间 + 银行中文简称 ~ Term, fun.aggregate = mean) %>% as.data.frame
+raw.data[is.na(raw.data)] <- 0
+raw.data[raw.data < 0] <- 0
+#sum(raw.data < 0)
+data <- raw.data[,-c(1,2)]/(10^10)#scale#
+names(data) <- c("lnd","brr","dlnd","dbrr")
+summary.data <- sapply(data, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
+summary.data <- summary.data %>% round(2) %>% t
+names(summary.data) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
+write.xlsx(summary.data, file = "latex/report/excel/summary_interbank.xlsx", row.names = TRUE)
+
+summary.data <- xtable(summary.data, caption = "Data Description of Interbank Loan and Interbank Deposit",
+                       label = "tab:summary_interbank"
+)
+align(summary.data) <- "llllllll"
+print(summary.data, 
+      file="latex/report/table/summary_interbank.tex", 
+      sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+      caption.placement = "top",
+      comment = "TRUE"
+)
 #################################################################
 # bank list
 #################################################################
@@ -522,7 +551,7 @@ group.wind <- c("交通银行股份有限公司",
                 #"南京银行股份有限公司", 
                 "北京银行股份有限公司")
 
-wind.name <- read_excel(path = "data/windname.xlsx",
+wind.name <- read_excel(path = "data/windname.xlsx",sheet = "name",
                         skip = 0,
                         col_names = F,
                         col_types = c("text", "text" , "text")) %>% as.data.frame
@@ -557,8 +586,12 @@ for(i in 1:length.fnlist){
   temp <- subset(temp, select =  -`报告期`)
   temp <- subset(temp, select =  -`公司名称`)
   temp <- subset(temp, select =  -`数据来源`)
-  temp <- subset(temp, select =  -`基本每股收益(万/股)`)
-  temp <- subset(temp, select =  -`稀释每股收益(元/股)`)
+  #temp <- subset(temp, select =  -`基本每股收益(万/股)`)
+  #temp <- subset(temp, select =  -`稀释每股收益(元/股)`)
+  temp$`基本每股收益(万/股)` <- temp$`基本每股收益(万/股)` * (10^5)/10000*(12^10)#scale#
+  temp$`稀释每股收益(元/股)` <- temp$`稀释每股收益(元/股)` * (10^5)/10000*(12^10)#scale#
+  #temp$`应付利息(万元)` <- temp$`应付利息(万元)` /(10^6)/10000*(12^10)#scale#
+  #temp$`应收利息(万元)` <- temp$`应收利息(万元)` /(10^6)/10000*(12^10)#scale#
   
   print(temp %>% is.na %>% sum)
   onames <- names(temp)
@@ -569,11 +602,14 @@ for(i in 1:length.fnlist){
   raw.wind[[i]] <- temp
 }
 raw.wind <- F.fill.up.NAs(raw.wind)
+raw.wind %>% is.na %>% sum
 save(raw.wind, file = "data/Rdata/latex_raw.wind.Rdata")
 load(file = "data/Rdata/latex_raw.wind.Rdata")
 #################################################################
-# summary wind
+# plot cor wind
 #################################################################
+#https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
+load(file = "data/Rdata/latex_raw.wind.Rdata")
 wind <- raw.wind[[1]]
 for (i in 2:length(raw.wind)) {
   temp <- raw.wind[[i]]
@@ -583,15 +619,41 @@ for (i in 2:length(raw.wind)) {
 names(wind)
 dim(wind)
 
-wind <- wind[,c("资产总计(万元)",
-                "负债合计(万元)",
-                "手续费及佣金收入(万元)",
-                "营业收入(万元)",
-                "拆出资金(万元)",
-                "拆入资金(万元)")] %>% log
-wind$sty <- wind$`手续费及佣金收入(万元)`/wind$`营业收入(万元)`
-wind <- wind[,c("资产总计(万元)", "负债合计(万元)","拆出资金(万元)","拆入资金(万元)")]
-names(wind) <- c("ass","dbt","lnd","brr")
+library(RColorBrewer)
+res1 <- cor.mtest(wind, conf.level = .95)
+corrplot(cor(wind), p.mat = res1$p, insig = "blank",
+         method = "color",
+         #col = brewer.pal(n = 8, name = "PuOr"),
+         type = "lower",
+         tl.col = "black", #tl.srt = 90, 
+         tl.cex = 1,
+         diag = FALSE
+)
+#
+selected.wind <- c("asst","lblt","lnd","brr","dlnd","dbrr","nprf", "grp")
+wind <- wind[,selected.wind]
+res1 <- cor.mtest(wind, conf.level = .95)
+corrplot(cor(wind), p.mat = res1$p, insig = "blank",
+         method = "color",
+         #type = "lower",
+         tl.col = "black", tl.srt = 90,
+         diag = FALSE
+)
+#################################################################
+# summary wind
+#################################################################
+load(file = "data/Rdata/latex_raw.wind.Rdata")
+wind <- raw.wind[[1]]
+for (i in 2:length(raw.wind)) {
+  temp <- raw.wind[[i]]
+  wind <- rbind(wind,temp)
+}
+
+names(wind)
+dim(wind)
+
+selected.wind <- c("asst","lblt","lnd","brr","dlnd","dbrr")
+wind <- wind[,selected.wind]
 
 summary.wind <- sapply(wind %>% na.omit, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
 summary.wind <- summary.wind %>% round(2) %>% t
@@ -608,7 +670,28 @@ print(summary.wind,
       caption.placement = "top",
       comment = "TRUE"
 )
+#################################################################
+# Correlation table with significance indicators for wind data
+#################################################################
+load(file = "data/Rdata/latex_raw.wind.Rdata")
+wind <- raw.wind[[1]]
+for (i in 2:length(raw.wind)) {
+  temp <- raw.wind[[i]]
+  wind <- rbind(wind,temp)
+}
+selected.wind <- c("asst","lblt","lnd","brr","dlnd","dbrr","nprf", "grp")
+wind <- wind[,selected.wind]
+correlation.table <- xtable(corstars(wind), caption = "Correlation Table",
+                       label = "tab:correlation_table"
+)
+align(correlation.table) <-  combine_words(rep("l",dim(correlation.table)[2]+1),sep="",and = "")
 
+print(correlation.table, 
+      file="latex/report/table/correlation_table.tex", 
+      sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+      caption.placement = "top",
+      comment = "TRUE"
+)
 #################################################################
 # g.sp data description
 #################################################################
@@ -1017,4 +1100,161 @@ y[is.na(y)] <- 0
 x-y
 
 aenet.myl.W1[[1125]] - aenet.myl.W1[[1125]]
+
+
+#################################################################
+# save yearly network y
+#################################################################
+bank10.abbr <- c("SOBC", "SOICBC", "SOCCB", "SOBOC", "JEPF", "JEHB", "JECM", "JECI", "JECITIC", "URBJ")
+n.bond <- c("TRCHZ12", "TRCHZ15", "TRCHZ20", "TRCHZ25", "TRCHZ2Y", "TRCHZ30", "TRCHZ3Y", "TRCHZ4Y", "TRCHZ5Y", "TRCHZ6Y", "TRCHZ7Y", "TRCHZ8Y", "TRCHZ9Y", "TRCHZ10", "TRCHZ1Y")
+n.is.higher <- c("O.N","X1W","X2W","X1M","X3M","X6M","X9M","sum","crisis.sma20","crisis")
+n.all.bid.ON <- paste0(bank10.abbr,".ON")
+n.all.bid.W1 <- paste0(bank10.abbr,".W1")
+n.all.bid.W2 <- paste0(bank10.abbr,".W2")
+n.all.bid.M1 <- paste0(bank10.abbr,".M1")
+n.all.bid.M3 <- paste0(bank10.abbr,".M3")
+n.all.bid.M6 <- paste0(bank10.abbr,".M6")
+n.all.bid.M9 <- paste0(bank10.abbr,".M9")
+n.all.bid.Y1 <- paste0(bank10.abbr,".Y1")
+n.sp <- bank10.abbr
+n.g.sp <- paste0(n.sp,".g")
+
+data <- read.csv(file = "data/bank10/ForestData.csv")
+data <- xts(data[,-1], as.Date(data[,1], format='%Y-%m-%d'))
+Date <- index(data) %>% as.character
+
+is.higher <- data[,n.is.higher]
+g.sp <- data[,n.g.sp]
+sp <- data[,n.sp]
+bond <- data[,n.bond]
+all.bid.ON <- data[,n.all.bid.ON]
+all.bid.W1 <- data[,n.all.bid.W1]
+all.bid.W2 <- data[,n.all.bid.W2]
+all.bid.M1 <- data[,n.all.bid.M1]
+all.bid.M3 <- data[,n.all.bid.M3]
+all.bid.M6 <- data[,n.all.bid.M6]
+all.bid.M9 <- data[,n.all.bid.M9]
+all.bid.Y1 <- data[,n.all.bid.Y1]
+
+aenet.myl.ON <- list();aenet.myl.W1 <- list()
+aenet.myl.W2 <- list();aenet.myl.M1 <- list()
+aenet.myl.M3 <- list();aenet.myl.M6 <- list()
+aenet.myl.M9 <- list();aenet.myl.Y1 <- list()
+aenet.myl.short <- list();aenet.myl.long <- list();aenet.myl.all <- list()
+var.myl.gir <- list()
+vecm.myl.gir <- list()
+network.y <- list()
+y.period <- c(#"2006-12-31",
+  #"2007-12-31",
+  "2008-12-31",
+  "2009-12-31",
+  "2010-12-31",
+  "2011-12-31",
+  "2012-12-31",
+  "2013-12-31",
+  "2014-12-31",
+  "2015-12-31",
+  "2016-12-31",
+  "2017-12-31",
+  "2018-12-31"
+)
+# the sample in 2018 is too small
+for (t in 1:(length(y.period)-2)) {
+  temp <- aenet.fix(data = all.bid.ON, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef
+  aenet.myl.ON[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
+  colnames(aenet.myl.ON[[t]]) <- bank10.abbr;rownames(aenet.myl.ON[[t]]) <- bank10.abbr
+  aenet.myl.ON <- lapply(aenet.myl.ON, replaceNA0)
+  
+  temp <- aenet.fix(data = all.bid.W1, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
+  aenet.myl.W1[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
+  colnames(aenet.myl.W1[[t]]) <- bank10.abbr;rownames(aenet.myl.W1[[t]]) <- bank10.abbr
+  aenet.myl.W1 <- lapply(aenet.myl.W1, replaceNA0)
+  
+  temp <- aenet.fix(data = all.bid.W2, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
+  aenet.myl.W2[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
+  colnames(aenet.myl.W2[[t]]) <- bank10.abbr;rownames(aenet.myl.W2[[t]]) <- bank10.abbr
+  aenet.myl.W2 <- lapply(aenet.myl.W2, replaceNA0)
+  
+  temp <- aenet.fix(data = all.bid.M1, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
+  aenet.myl.M1[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
+  colnames(aenet.myl.M1[[t]]) <- bank10.abbr;rownames(aenet.myl.M1[[t]]) <- bank10.abbr
+  aenet.myl.M1 <- lapply(aenet.myl.M1, replaceNA0)
+  
+  temp <- aenet.fix(data = all.bid.M3, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
+  aenet.myl.M3[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
+  colnames(aenet.myl.M3[[t]]) <- bank10.abbr;rownames(aenet.myl.M3[[t]]) <- bank10.abbr
+  aenet.myl.M3 <- lapply(aenet.myl.M3, replaceNA0)
+  
+  temp <- aenet.fix(data = all.bid.M6, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
+  aenet.myl.M6[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
+  colnames(aenet.myl.M6[[t]]) <- bank10.abbr;rownames(aenet.myl.M6[[t]]) <- bank10.abbr
+  aenet.myl.M6 <- lapply(aenet.myl.M6, replaceNA0)
+  
+  temp <- aenet.fix(data = all.bid.M9, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
+  aenet.myl.M9[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
+  colnames(aenet.myl.M9[[t]]) <- bank10.abbr;rownames(aenet.myl.M9[[t]]) <- bank10.abbr
+  aenet.myl.M9 <- lapply(aenet.myl.M9, replaceNA0)
+  
+  temp <- aenet.fix(data = all.bid.Y1, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
+  aenet.myl.Y1[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
+  colnames(aenet.myl.Y1[[t]]) <- bank10.abbr;rownames(aenet.myl.Y1[[t]]) <- bank10.abbr
+  aenet.myl.Y1 <- lapply(aenet.myl.Y1, replaceNA0)
+  
+  aenet.myl.short[[t]] <- (aenet.myl.ON[[t]] + aenet.myl.W1[[t]] + aenet.myl.W2[[t]] + aenet.myl.M1[[t]])/4
+  aenet.myl.long[[t]] <- (aenet.myl.M3[[t]] + aenet.myl.M6[[t]] + aenet.myl.M9[[t]] + aenet.myl.Y1[[t]])/4
+  aenet.myl.all[[t]] <- (aenet.myl.short[[t]]+aenet.myl.long[[t]])/2
+  
+  
+    vecm.gir0 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir0 <- matrix(data = unlist(vecm.gir0),nrow =10,ncol = 10)
+    vecm.gir1 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir1 <- matrix(data = unlist(vecm.gir1),nrow =10,ncol = 10)
+    vecm.gir2 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 2, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir2 <- matrix(data = unlist(vecm.gir2),nrow =10,ncol = 10)
+    vecm.gir3 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 3, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir3 <- matrix(data = unlist(vecm.gir3),nrow =10,ncol = 10)
+    vecm.gir4 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 4, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir4 <- matrix(data = unlist(vecm.gir4),nrow =10,ncol = 10)
+    vecm.gir5 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 5, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir5 <- matrix(data = unlist(vecm.gir5),nrow =10,ncol = 10)
+    GIR <- array(c(vecm.gir0,
+                   vecm.gir1,
+                   vecm.gir2,
+                   vecm.gir3,
+                   vecm.gir4,
+                   vecm.gir5), dim = c(10,10,6))
+    temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+    temp <- matrix(temp %>% unlist,10,10) #%>% t
+    vecm.myl.gir[[t]] <- temp
+    colnames(vecm.myl.gir[[t]]) <- bank10.abbr;rownames(vecm.myl.gir[[t]]) <- bank10.abbr
+
+    var.gir0 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly")[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow =10,ncol = 10)
+    var.gir1 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly")[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow =10,ncol = 10)
+    var.gir2 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 2, span = "yearly")[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow =10,ncol = 10)
+    var.gir3 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 3, span = "yearly")[[1]];var.gir3 <- matrix(data = unlist(var.gir3),nrow =10,ncol = 10)
+    var.gir4 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 4, span = "yearly")[[1]];var.gir4 <- matrix(data = unlist(var.gir4),nrow =10,ncol = 10)
+    var.gir5 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 5, span = "yearly")[[1]];var.gir5 <- matrix(data = unlist(var.gir5),nrow =10,ncol = 10)
+    GIR <- array(c(var.gir0,
+                   var.gir1,
+                   var.gir2,
+                   var.gir3,
+                   var.gir4,
+                   var.gir5), dim = c(10,10,6))
+    temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+    temp <- matrix(temp %>% unlist,10,10) #%>% t
+    var.myl.gir[[t]] <- temp
+    colnames(var.myl.gir[[t]]) <- bank10.abbr;rownames(var.myl.gir[[t]] ) <- bank10.abbr
+
+}
+
+save(y.period,
+     vecm.myl.gir,
+     var.myl.gir,
+     aenet.myl.short, 
+     aenet.myl.long,
+     aenet.myl.all,
+     aenet.myl.ON,
+     aenet.myl.W1,
+     aenet.myl.W2,
+     aenet.myl.M1,
+     aenet.myl.M3,
+     aenet.myl.M6,
+     aenet.myl.M9,
+     aenet.myl.Y1,
+     file = "data/Rdata/latex_yearly_networky.Rdata"
+)
 

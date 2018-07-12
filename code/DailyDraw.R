@@ -1,7 +1,7 @@
 ###############################################################
 # load
 ###############################################################
-set <- "VECM_1"
+set <- "VECMyx(t-1)1"
 load(file = paste0("data/Rdata/Daily/", set, ".Rdata"))
 range <- 10
 ###############################################################
@@ -10,8 +10,8 @@ range <- 10
 n.is.higher <- c("O.N","X1W","X2W","X1M","X3M","X6M","X9M","sum","crisis.sma20","crisis")
 data <- read.csv(file = "data/bank10/ForestData.csv")
 data <- xts(data[,-1], as.Date(data[,1], format='%Y-%m-%d'))
-Date <- index(data) %>% as.character;Date <- Date[-c(1:250)]
-is.higher <- data[,n.is.higher][-c(1:250),]
+Date <- index(data) %>% as.character;Date <- Date[-c(1:251)]
+is.higher <- data[,n.is.higher][-c(1:251),]
 n.inclusion.edgecov <- length(coef.ergm.l)
 fig <- TRUE
 
@@ -37,13 +37,13 @@ if(fig){
     #dy.coef <- xts(dy.coef, as.Date(index(is.higher), format='%Y-%m-%d'))
     names(dy.coef)[length(names(dy.coef))] <- "Crisis"
     
-    if(set =="VAR_2" | set =="VECM_2"){
+    if(set =="VARyx(t)2" | set =="VECMyx(t)2" | set =="VECMyx(t-1)2"| set =="VECMyx(t-1)2"){
       color <- colorRampPalette(c("white", "red"))(range+3)[-c(1:3)]
     }
-    if(set =="VAR_3" | set =="VECM_3"){
+    if(set =="VARyx(t)3" | set =="VECMyx(t)3" | set =="VECMyx(t-1)3"| set =="VECMyx(t-1)3"){
       color <- colorRampPalette(c("white", "blue"))(range+3)[-c(1:3)]
     }
-    if(set =="VAR_4" | set =="VECM_4"){
+    if(set =="VARyx(t)4" | set =="VECMyx(t)4" | set =="VECMyx(t-1)4"| set =="VECMyx(t-1)4"){
       color <- c("#F3E7FC","#DDB3F9","#BD88F4","#9B63F6","#8241F1",
                  "#651CE4","#591BDE","#3912AB","#320F95","#240965")
     }

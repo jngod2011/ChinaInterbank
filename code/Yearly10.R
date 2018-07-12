@@ -1,21 +1,22 @@
 #time###########################################################################################
 timestart <- Sys.time()
 #####################################################################
-ID <- c("SL1")
-inclusion.edgecov <- c("loan")
+ID <- c("19")
+network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#
+inclusion.edgecov <- c("loan","deposit")
 inclusion.nodecov <- NULL
-inclusion.nodeocov <- c("asst", "lblt")
-inclusion.nodeicov <- c("asst", "lblt")
+inclusion.wind <- "beps"
+inclusion.nodeocov <- c("asst","lblt", inclusion.wind)
+inclusion.nodeicov <- c("asst","lblt", inclusion.wind)
 inclusion.absdiff <- NULL
 #setting###########################################################################################
-set <- " "
-network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#
+set <- ""
 triangle <- "all"
 directed <- T
 BidType <- "aenet"
-filename <- paste0(network.y.type,"_",as.character(directed),"_",triangle,"_",BidType, ID)
+filename <- paste0(network.y.type,"_",ID)
 MCMLE.maxit <- 100
-trans <- c("y","ON","W1","W2","M1","M3","M6","M9","Y1","short","long")
+trans <- c("y","ON","W1","W2","M1","M3","M6","M9","Y1","short","long","all")
 inclusion.cyclicalweights <- F
 inclusion.mutual <- F
 inclusion.nodecovar <- F
@@ -122,7 +123,7 @@ aenet.myl.ON <- list();aenet.myl.W1 <- list()
 aenet.myl.W2 <- list();aenet.myl.M1 <- list()
 aenet.myl.M3 <- list();aenet.myl.M6 <- list()
 aenet.myl.M9 <- list();aenet.myl.Y1 <- list()
-aenet.myl.short <- list();aenet.myl.long <- list()
+aenet.myl.short <- list();aenet.myl.long <- list();aenet.myl.all <- list()
 var.myl.fevd <- list();var.myl.gir <- list()
 vecm.myl.fevd <- list();vecm.myl.gir <- list()
 network.y <- list()
@@ -141,7 +142,8 @@ y.period <- c(#"2006-12-31",
   "2018-12-31"
 )
 # the sample in 2018 is too small
-for (t in 1:(length(y.period)-2)) {
+if(FALSE){
+  for (t in 1:(length(y.period)-2)) {
   temp <- aenet.fix(data = all.bid.ON, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef
   aenet.myl.ON[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
   colnames(aenet.myl.ON[[t]]) <- bank10.abbr;rownames(aenet.myl.ON[[t]]) <- bank10.abbr
@@ -162,18 +164,15 @@ for (t in 1:(length(y.period)-2)) {
   colnames(aenet.myl.M1[[t]]) <- bank10.abbr;rownames(aenet.myl.M1[[t]]) <- bank10.abbr
   aenet.myl.M1 <- lapply(aenet.myl.M1, replaceNA0)
   
-  
   temp <- aenet.fix(data = all.bid.M3, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
   aenet.myl.M3[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
   colnames(aenet.myl.M3[[t]]) <- bank10.abbr;rownames(aenet.myl.M3[[t]]) <- bank10.abbr
   aenet.myl.M3 <- lapply(aenet.myl.M3, replaceNA0)
   
-  
   temp <- aenet.fix(data = all.bid.M6, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
   aenet.myl.M6[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
   colnames(aenet.myl.M6[[t]]) <- bank10.abbr;rownames(aenet.myl.M6[[t]]) <- bank10.abbr
   aenet.myl.M6 <- lapply(aenet.myl.M6, replaceNA0)
-  
   
   temp <- aenet.fix(data = all.bid.M9, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
   aenet.myl.M9[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
@@ -187,45 +186,50 @@ for (t in 1:(length(y.period)-2)) {
   
   aenet.myl.short[[t]] <- (aenet.myl.ON[[t]] + aenet.myl.W1[[t]] + aenet.myl.W2[[t]] + aenet.myl.M1[[t]])/4
   aenet.myl.long[[t]] <- (aenet.myl.M3[[t]] + aenet.myl.M6[[t]] + aenet.myl.M9[[t]] + aenet.myl.Y1[[t]])/4
- 
-  if(network.y.type == "VECM.GIR"){
-    vecm.gir0 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir0 <- matrix(data = unlist(vecm.gir0),nrow =10,ncol = 10)
-    vecm.gir1 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir1 <- matrix(data = unlist(vecm.gir1),nrow =10,ncol = 10)
-    vecm.gir2 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 2, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir2 <- matrix(data = unlist(vecm.gir2),nrow =10,ncol = 10)
-    vecm.gir3 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 3, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir3 <- matrix(data = unlist(vecm.gir3),nrow =10,ncol = 10)
-    vecm.gir4 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 4, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir4 <- matrix(data = unlist(vecm.gir4),nrow =10,ncol = 10)
-    vecm.gir5 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 5, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir5 <- matrix(data = unlist(vecm.gir5),nrow =10,ncol = 10)
-    GIR <- array(c(vecm.gir0,
-                   vecm.gir1,
-                   vecm.gir2,
-                   vecm.gir3,
-                   vecm.gir4,
-                   vecm.gir5), dim = c(10,10,6))
-    temp <- weighted_gir(GIR, divided=1)$weighted.matrix
-    temp <- matrix(temp %>% unlist,10,10) #%>% t
-    network.y[[t]] <- temp
-    colnames(network.y[[t]]) <- bank10.abbr;rownames(network.y[[t]] ) <- bank10.abbr
-  }
-  if(network.y.type == "VAR.GIR"){
-    var.gir0 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly", keep.var = T, rank = 4)[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow =10,ncol = 10)
-    var.gir1 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly", keep.var = T, rank = 4)[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow =10,ncol = 10)
-    var.gir2 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 2, span = "yearly", keep.var = T, rank = 4)[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow =10,ncol = 10)
-    var.gir3 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 3, span = "yearly", keep.var = T, rank = 4)[[1]];var.gir3 <- matrix(data = unlist(var.gir3),nrow =10,ncol = 10)
-    var.gir4 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 4, span = "yearly", keep.var = T, rank = 4)[[1]];var.gir4 <- matrix(data = unlist(var.gir4),nrow =10,ncol = 10)
-    var.gir5 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 5, span = "yearly", keep.var = T, rank = 4)[[1]];var.gir5 <- matrix(data = unlist(var.gir5),nrow =10,ncol = 10)
-    GIR <- array(c(var.gir0,
-                   var.gir1,
-                   var.gir2,
-                   var.gir3,
-                   var.gir4,
-                   var.gir5), dim = c(10,10,6))
-    temp <- weighted_gir(GIR, divided=1)$weighted.matrix
-    temp <- matrix(temp %>% unlist,10,10) #%>% t
-    network.y[[t]] <- temp
-    colnames(network.y[[t]]) <- bank10.abbr;rownames(network.y[[t]] ) <- bank10.abbr
-  }
-}
+  aenet.myl.all[[t]] <- (aenet.myl.short[[t]]+aenet.myl.long[[t]])/2
+  
+  vecm.gir0 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir0 <- matrix(data = unlist(vecm.gir0),nrow =10,ncol = 10)
+  vecm.gir1 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir1 <- matrix(data = unlist(vecm.gir1),nrow =10,ncol = 10)
+  vecm.gir2 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 2, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir2 <- matrix(data = unlist(vecm.gir2),nrow =10,ncol = 10)
+  vecm.gir3 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 3, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir3 <- matrix(data = unlist(vecm.gir3),nrow =10,ncol = 10)
+  vecm.gir4 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 4, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir4 <- matrix(data = unlist(vecm.gir4),nrow =10,ncol = 10)
+  vecm.gir5 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 5, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir5 <- matrix(data = unlist(vecm.gir5),nrow =10,ncol = 10)
+  GIR <- array(c(vecm.gir0,
+                 vecm.gir1,
+                 vecm.gir2,
+                 vecm.gir3,
+                 vecm.gir4,
+                 vecm.gir5), dim = c(10,10,6))
+  temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+  temp <- matrix(temp %>% unlist,10,10) #%>% t
+  vecm.myl.gir[[t]] <- temp
+  colnames(vecm.myl.gir[[t]]) <- bank10.abbr;rownames(vecm.myl.gir[[t]]) <- bank10.abbr
+  
+  var.gir0 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly")[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow =10,ncol = 10)
+  var.gir1 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly")[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow =10,ncol = 10)
+  var.gir2 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 2, span = "yearly")[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow =10,ncol = 10)
+  var.gir3 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 3, span = "yearly")[[1]];var.gir3 <- matrix(data = unlist(var.gir3),nrow =10,ncol = 10)
+  var.gir4 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 4, span = "yearly")[[1]];var.gir4 <- matrix(data = unlist(var.gir4),nrow =10,ncol = 10)
+  var.gir5 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 5, span = "yearly")[[1]];var.gir5 <- matrix(data = unlist(var.gir5),nrow =10,ncol = 10)
+  GIR <- array(c(var.gir0,
+                 var.gir1,
+                 var.gir2,
+                 var.gir3,
+                 var.gir4,
+                 var.gir5), dim = c(10,10,6))
+  temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+  temp <- matrix(temp %>% unlist,10,10) #%>% t
+  var.myl.gir[[t]] <- temp
+  colnames(var.myl.gir[[t]]) <- bank10.abbr;rownames(var.myl.gir[[t]] ) <- bank10.abbr
+  }}
 
+load(file = "data/Rdata/latex_yearly_networky.Rdata")
+if(network.y.type=="VECM.GIR"){
+  network.y <- vecm.myl.gir
+}
+if(network.y.type=="VAR.GIR"){
+  network.y <- var.myl.gir
+}
 if(network.y.type=="short"){
   network.y <- aenet.myl.short
 }
@@ -275,7 +279,7 @@ dyErgm.result <- dyCoefErgm.yearly(data = network.y[1:8], set = set,
                                    MCMLE.maxit = MCMLE.maxit,
                                    triangle = triangle,
                                    directed = directed,
-                                   tab = T,
+                                   tab = T, csv = T,
                                    wind = raw.wind[3:10]
 )
 

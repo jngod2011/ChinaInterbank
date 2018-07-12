@@ -2,9 +2,9 @@
 timestart <- Sys.time()
 #####################################################################
 ID <- "F"
-network.y.type <- "M9"#shor long all VECM VAR ON W1 W2 M1 M3 M6 M9 Y1
-inclusion.edgecov <- c("rolling")
-trans <- c("y","rolling")
+network.y.type <- "VECM"#shor long all VECM VAR ON W1 W2 M1 M3 M6 M9 Y1
+inclusion.edgecov <- c("short","long")#c("rolling")
+trans <- c("y", "ON", "W1", "W2", "M1", "M3", "M6", "M9", "Y1", "short", "long", "all")
 #setting###########################################################################################
 filename <- paste0(network.y.type,"_", ID)
 set <- filename
@@ -67,117 +67,79 @@ source("code/functionNewRMB.R")
 n.is.higher <- c("O.N","X1W","X2W","X1M","X3M","X6M","X9M","sum","crisis.sma20","crisis")
 data <- read.csv(file = "data/bank10/ForestData.csv")
 data <- xts(data[,-1], as.Date(data[,1], format='%Y-%m-%d'))
-Date <- index(data) %>% as.character;Date <- Date[-c(1:251)]
-is.higher <- data[,n.is.higher]
+Date <- index(data) %>% as.character;Date <- Date[-c(1:250)]
+is.higher <- data[,n.is.higher][-c(1:250),]
 ###########################################################################################
-# network.y shibor bid
+# network.y 
 ###########################################################################################
-load(file="data/Rdata/DailyShiborBidAenet.Rdata")
-if(network.y.type=="short"){
-  temp.list <- aenet.myl.short
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="long"){
-  temp.list <- aenet.myl.long
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="all"){
-  temp.list <- aenet.myl.all
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="ON"){
-  temp.list <- aenet.myl.ON
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="W1"){
-  temp.list <- aenet.myl.W1
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="W2"){
-  temp.list <- aenet.myl.W2
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="M1"){
-  temp.list <- aenet.myl.M1
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="M3"){
-  temp.list <- aenet.myl.M3
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="M6"){
-  temp.list <- aenet.myl.M6
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="M9"){
-  temp.list <- aenet.myl.M9
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-if(network.y.type=="Y1"){
-  temp.list <- aenet.myl.Y1
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-}
-
-for (i in 1:length(aenet.myl.long)) {
-  temp <- aenet.myl.long[[i]][1:10,1:10]
-  if(sum(is.na(temp))==100){print(i)}
-}
-
-###########################################################################################
-# network.y sp
-###########################################################################################
-if(network.y.type=="VAR"){
-  load(file = "data/Rdata/latex_daily.var.gir.Rdata")
-  daily.var.gir <- list()
-  for (i in 1:length(daily.var.gir0)) {
-    GIR <- array(c(daily.var.gir0[[i]],
-                   daily.var.gir1[[i]],
-                   daily.var.gir2[[i]],
-                   daily.var.gir3[[i]],
-                   daily.var.gir4[[i]],
-                   daily.var.gir5[[i]]),dim = c(10,10,6))
-    daily.var.gir[[i]] <- weighted_gir(GIR, divided=1)$weighted.matrix
+if(TRUE){
+  load(file="data/Rdata/DailyShiborBidAenet.Rdata")
+  if(network.y.type=="short"){
+    network.y <- aenet.myl.short
+  }
+  if(network.y.type=="long"){
+    network.y <- aenet.myl.long
+  }
+  if(network.y.type=="all"){
+    network.y <- aenet.myl.all
+  }
+  if(network.y.type=="ON"){
+    network.y <- aenet.myl.ON
+  }
+  if(network.y.type=="W1"){
+    network.y <- aenet.myl.W1
+  }
+  if(network.y.type=="W2"){
+    network.y <- aenet.myl.W2
+  }
+  if(network.y.type=="M1"){
+    network.y <- aenet.myl.M1
+  }
+  if(network.y.type=="M3"){
+    network.y <- aenet.myl.M3
+  }
+  if(network.y.type=="M6"){
+    network.y <- aenet.myl.M6
+  }
+  if(network.y.type=="M9"){
+    network.y <- aenet.myl.M9
+  }
+  if(network.y.type=="Y1"){
+    network.y <- aenet.myl.Y1
   }
   
-  temp.list <- daily.var.gir
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-  Date <- index(g.sp) %>% as.character
-  Date <- Date[-c(1:251)]
-}
-
-if(network.y.type=="VECM"){
-  load(file = "data/Rdata/latex_daily.vecm.gir.Rdata")
-  daily.vecm.gir <- list()
-  for (i in 1:length(daily.vecm.gir0)) {
-    GIR <- array(c(daily.vecm.gir0[[i]],
-                   daily.vecm.gir1[[i]],
-                   daily.vecm.gir2[[i]],
-                   daily.vecm.gir3[[i]],
-                   daily.vecm.gir4[[i]],
-                   daily.vecm.gir5[[i]]),dim = c(10,10,6))
-    daily.vecm.gir[[i]] <- weighted_gir(GIR, divided=1)$weighted.matrix
+  if(network.y.type=="VAR"){
+    load(file = "data/Rdata/latex_daily.var.gir.Rdata")
+    daily.var.gir <- list()
+    for (i in 1:length(daily.var.gir0)) {
+      GIR <- array(c(daily.var.gir0[[i]],
+                     daily.var.gir1[[i]],
+                     daily.var.gir2[[i]],
+                     daily.var.gir3[[i]],
+                     daily.var.gir4[[i]],
+                     daily.var.gir5[[i]]),dim = c(10,10,6))
+      daily.var.gir[[i]] <- weighted_gir(GIR, divided=1)$weighted.matrix
+    }
+    network.y <- daily.var.gir
   }
   
-  temp.list <- daily.vecm.gir
-  network.y <- temp.list[-1]
-  rolling <- temp.list[-length(temp.list)]
-  Date <- index(g.sp) %>% as.character
-  Date <- Date[-c(1:251)]
+  if(network.y.type=="VECM"){
+    load(file = "data/Rdata/latex_daily.vecm.gir.Rdata")
+    daily.vecm.gir <- list()
+    for (i in 1:length(daily.vecm.gir0)) {
+      GIR <- array(c(daily.vecm.gir0[[i]],
+                     daily.vecm.gir1[[i]],
+                     daily.vecm.gir2[[i]],
+                     daily.vecm.gir3[[i]],
+                     daily.vecm.gir4[[i]],
+                     daily.vecm.gir5[[i]]),dim = c(10,10,6))
+      daily.vecm.gir[[i]] <- weighted_gir(GIR, divided=1)$weighted.matrix
+    }
+    network.y <- daily.vecm.gir
+  }
 }
 ###########################################################################################
-# ergm rolling
+# ergm 
 ###########################################################################################
 dyErgm.result <- dyCoefErgm.yearly(data = network.y, set = set, 
                                    inclusion.edgecov = inclusion.edgecov,

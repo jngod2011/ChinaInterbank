@@ -1,15 +1,15 @@
 #time###########################################################################################
 timestart <- Sys.time()
 #####################################################################
-ID <- c("SL1")
-inclusion.edgecov <- c("loan")
+ID <- c("F1")
+network.y.type <- "all"#"VECM.GIR"#VAR.GIR#
+inclusion.edgecov <- c("compound")
 inclusion.nodecov <- NULL
-inclusion.nodeocov <- c("asst", "lblt")
-inclusion.nodeicov <- c("asst", "lblt")
+inclusion.nodeocov <- c("asst", "lblt")#"nprf", "cdcb", "tfa", "la", "asfa", "bfc", "grp", "nilcb", "scfo"
+inclusion.nodeicov <- c("asst", "lblt")#"dbrr", "lnd", "asst", "dlnd", "brr", "lblt"
 inclusion.absdiff <- NULL
 #setting###########################################################################################
-set <- " "
-network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#VECM.GIR.OR
+set <- ""
 triangle <- "all"
 directed <- T
 BidType <- "aenet"
@@ -122,7 +122,7 @@ aenet.myl.ON <- list();aenet.myl.W1 <- list()
 aenet.myl.W2 <- list();aenet.myl.M1 <- list()
 aenet.myl.M3 <- list();aenet.myl.M6 <- list()
 aenet.myl.M9 <- list();aenet.myl.Y1 <- list()
-aenet.myl.short <- list();aenet.myl.long <- list()
+aenet.myl.short <- list();aenet.myl.long <- list();aenet.myl.all <- list()
 var.myl.fevd <- list();var.myl.gir <- list()
 vecm.myl.fevd <- list();vecm.myl.gir <- list()
 network.y <- list()
@@ -162,18 +162,15 @@ for (t in 1:(length(y.period)-2)) {
   colnames(aenet.myl.M1[[t]]) <- bank10.abbr;rownames(aenet.myl.M1[[t]]) <- bank10.abbr
   aenet.myl.M1 <- lapply(aenet.myl.M1, replaceNA0)
   
-  
   temp <- aenet.fix(data = all.bid.M3, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
   aenet.myl.M3[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
   colnames(aenet.myl.M3[[t]]) <- bank10.abbr;rownames(aenet.myl.M3[[t]]) <- bank10.abbr
   aenet.myl.M3 <- lapply(aenet.myl.M3, replaceNA0)
   
-  
   temp <- aenet.fix(data = all.bid.M6, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
   aenet.myl.M6[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
   colnames(aenet.myl.M6[[t]]) <- bank10.abbr;rownames(aenet.myl.M6[[t]]) <- bank10.abbr
   aenet.myl.M6 <- lapply(aenet.myl.M6, replaceNA0)
-  
   
   temp <- aenet.fix(data = all.bid.M9, fix = "yearly", start.point = y.period[t], end.point = y.period[t+1])$Coef 
   aenet.myl.M9[[t]] <- matrix(temp %>% unlist,25,25)[1:10,1:10] #%>% t
@@ -187,24 +184,8 @@ for (t in 1:(length(y.period)-2)) {
   
   aenet.myl.short[[t]] <- (aenet.myl.ON[[t]] + aenet.myl.W1[[t]] + aenet.myl.W2[[t]] + aenet.myl.M1[[t]])/4
   aenet.myl.long[[t]] <- (aenet.myl.M3[[t]] + aenet.myl.M6[[t]] + aenet.myl.M9[[t]] + aenet.myl.Y1[[t]])/4
+  aenet.myl.all[[t]] <- (aenet.myl.short[[t]]+aenet.myl.long[[t]])/2
   
-  #temp <- dy.VAR.FEVD(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead =1, mode= "fix", span ="yearly")
-  #var.myl.fevd[[t]] <- matrix(temp$fevd.matrix %>% unlist,10,10) #%>% t
-  #colnames(var.myl.fevd[[t]]) <- bank10.abbr;rownames(var.myl.fevd[[t]]) <- bank10.abbr
-  
-  #temp <- dy.VAR.GIR(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead =1, mode= "fix", span ="yearly")
-  #var.myl.gir[[t]] <- matrix(temp$gir.matrix %>% unlist,10,10) #%>% t
-  #colnames(var.myl.gir[[t]]) <- bank10.abbr;rownames(var.myl.gir[[t]]) <- bank10.abbr
-  
-  #temp <- dy.VECM.FEVD(data = sp[paste0(y.period[t],"/",y.period[t+1])], group = names(sp), n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-  #vecm.myl.fevd[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) #%>% t
-  #colnames(vecm.myl.fevd[[t]]) <- bank10.abbr;rownames(vecm.myl.fevd[[t]]) <- bank10.abbr
-  
-  if(network.y.type == "VECM.GIR.OR"){
-    temp <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], group = names(sp), n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-    network.y[[t]] <- matrix(temp$gir.matrix %>% unlist,10,10) #%>% t
-    colnames(network.y[[t]]) <- bank10.abbr;rownames(network.y[[t]] ) <- bank10.abbr
-  }
   if(network.y.type == "VECM.GIR"){
     vecm.gir0 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir0 <- matrix(data = unlist(vecm.gir0),nrow =10,ncol = 10)
     vecm.gir1 <- dy.VECM.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir1 <- matrix(data = unlist(vecm.gir1),nrow =10,ncol = 10)
@@ -222,9 +203,6 @@ for (t in 1:(length(y.period)-2)) {
     temp <- matrix(temp %>% unlist,10,10) #%>% t
     network.y[[t]] <- temp
     colnames(network.y[[t]]) <- bank10.abbr;rownames(network.y[[t]] ) <- bank10.abbr
-    print(t)
-    print(network.y.type)
-    print("############################")
   }
   if(network.y.type == "VAR.GIR"){
     var.gir0 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly", keep.var = T, rank = 4)[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow =10,ncol = 10)
@@ -245,164 +223,40 @@ for (t in 1:(length(y.period)-2)) {
     colnames(network.y[[t]]) <- bank10.abbr;rownames(network.y[[t]] ) <- bank10.abbr
   }
 }
-#network###########################################################################################
-# vecm gir and fevd for shibor bid
-#vecm.gir.myl.ON <- list(); vecm.gir.myl.W1 <- list()
-#vecm.gir.myl.W2 <- list(); vecm.gir.myl.M1 <- list()
-#vecm.gir.myl.M3 <- list(); vecm.gir.myl.M6 <- list()
-#vecm.gir.myl.M9 <- list(); vecm.gir.myl.Y1 <- list()
 
-#vecm.fevd.myl.ON <- list(); vecm.fevd.myl.W1 <- list()
-#vecm.fevd.myl.W2 <- list(); vecm.fevd.myl.M1 <- list()
-#vecm.fevd.myl.M3 <- list(); vecm.fevd.myl.M6 <- list()
-#vecm.fevd.myl.M9 <- list(); vecm.fevd.myl.Y1 <- list()
-
-#for (t in 1:(length(y.period)-2)) {
-#temp <- dy.VECM.FEVD(data = all.bid.ON[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.fevd.myl.ON[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#colnames(vecm.fevd.myl.ON[[t]]) <- bank10.abbr;rownames(vecm.fevd.myl.ON[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.FEVD(data = all.bid.W1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.fevd.myl.W1[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#colnames(vecm.fevd.myl.W1[[t]]) <- bank10.abbr;rownames(vecm.fevd.myl.W1[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.FEVD(data = all.bid.W2[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.fevd.myl.W2[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#colnames(vecm.fevd.myl.W2[[t]]) <- bank10.abbr;rownames(vecm.fevd.myl.W2[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.FEVD(data = all.bid.M1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.fevd.myl.M1[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#colnames(vecm.fevd.myl.M1[[t]]) <- bank10.abbr;rownames(vecm.fevd.myl.M1[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.FEVD(data = all.bid.M3[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.fevd.myl.M3[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#colnames(vecm.fevd.myl.M3[[t]]) <- bank10.abbr;rownames(vecm.fevd.myl.M3[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.FEVD(data = all.bid.M6[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.fevd.myl.M6[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#colnames(vecm.fevd.myl.M6[[t]]) <- bank10.abbr;rownames(vecm.fevd.myl.M6[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.FEVD(data = all.bid.M9[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.fevd.myl.M9[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#colnames(vecm.fevd.myl.M9[[t]]) <- bank10.abbr;rownames(vecm.fevd.myl.M9[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.FEVD(data = all.bid.Y1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.fevd.myl.Y1[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#colnames(vecm.fevd.myl.Y1[[t]]) <- bank10.abbr;rownames(vecm.fevd.myl.Y1[[t]]) <- bank10.abbr
-
-################################################################################################################################################################
-#temp <- dy.VECM.GIR(data = all.bid.ON[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.gir.myl.ON[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#colnames(vecm.gir.myl.ON[[t]]) <- bank10.abbr;rownames(vecm.gir.myl.ON[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.GIR(data = all.bid.W1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.gir.myl.W1[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#colnames(vecm.gir.myl.W1[[t]]) <- bank10.abbr;rownames(vecm.gir.myl.W1[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.GIR(data = all.bid.W2[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.gir.myl.W2[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#colnames(vecm.gir.myl.W2[[t]]) <- bank10.abbr;rownames(vecm.gir.myl.W2[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.GIR(data = all.bid.M1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.gir.myl.M1[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#colnames(vecm.gir.myl.M1[[t]]) <- bank10.abbr;rownames(vecm.gir.myl.M1[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.GIR(data = all.bid.M3[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.gir.myl.M3[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#colnames(vecm.gir.myl.M3[[t]]) <- bank10.abbr;rownames(vecm.gir.myl.M3[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.GIR(data = all.bid.M6[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.gir.myl.M6[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#colnames(vecm.gir.myl.M6[[t]]) <- bank10.abbr;rownames(vecm.gir.myl.M6[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.GIR(data = all.bid.M9[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.gir.myl.M9[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#colnames(vecm.gir.myl.M9[[t]]) <- bank10.abbr;rownames(vecm.gir.myl.M9[[t]]) <- bank10.abbr
-
-#temp <- dy.VECM.GIR(data = all.bid.Y1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly", keep.vecm = TRUE,rank = 9)
-#vecm.gir.myl.Y1[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#colnames(vecm.gir.myl.Y1[[t]]) <- bank10.abbr;rownames(vecm.gir.myl.Y1[[t]]) <- bank10.abbr
-#}
-
-#var.gir.myl.ON <- list(); var.gir.myl.W1 <- list()
-#var.gir.myl.W2 <- list(); var.gir.myl.M1 <- list()
-#var.gir.myl.M3 <- list(); var.gir.myl.M6 <- list()
-#var.gir.myl.M9 <- list(); var.gir.myl.Y1 <- list()
-
-#var.fevd.myl.ON <- list(); var.fevd.myl.W1 <- list()
-#var.fevd.myl.W2 <- list(); var.fevd.myl.M1 <- list()
-#var.fevd.myl.M3 <- list(); var.fevd.myl.M6 <- list()
-#var.fevd.myl.M9 <- list(); var.fevd.myl.Y1 <- list()
-
-#for (t in 1:(length(y.period)-2)) {
-#  temp <- dy.VAR.FEVD(data = all.bid.ON[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.fevd.myl.ON[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#  colnames(var.fevd.myl.ON[[t]]) <- bank10.abbr;rownames(var.fevd.myl.ON[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.FEVD(data = all.bid.W1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.fevd.myl.W1[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#  colnames(var.fevd.myl.W1[[t]]) <- bank10.abbr;rownames(var.fevd.myl.W1[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.FEVD(data = all.bid.W2[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.fevd.myl.W2[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#  colnames(var.fevd.myl.W2[[t]]) <- bank10.abbr;rownames(var.fevd.myl.W2[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.FEVD(data = all.bid.M1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.fevd.myl.M1[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#  colnames(var.fevd.myl.M1[[t]]) <- bank10.abbr;rownames(var.fevd.myl.M1[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.FEVD(data = all.bid.M3[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.fevd.myl.M3[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#  colnames(var.fevd.myl.M3[[t]]) <- bank10.abbr;rownames(var.fevd.myl.M3[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.FEVD(data = all.bid.M6[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.fevd.myl.M6[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#  colnames(var.fevd.myl.M6[[t]]) <- bank10.abbr;rownames(var.fevd.myl.M6[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.FEVD(data = all.bid.M9[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.fevd.myl.M9[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#  colnames(var.fevd.myl.M9[[t]]) <- bank10.abbr;rownames(var.fevd.myl.M9[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.FEVD(data = all.bid.Y1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.fevd.myl.Y1[[t]] <-matrix(temp$fevd.matrix %>% unlist,10,10) 
-#  colnames(var.fevd.myl.Y1[[t]]) <- bank10.abbr;rownames(var.fevd.myl.Y1[[t]]) <- bank10.abbr
-#  
-################################################################################################################################################################
-#  temp <- dy.VAR.GIR(data = all.bid.ON[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.gir.myl.ON[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#  colnames(var.gir.myl.ON[[t]]) <- bank10.abbr;rownames(var.gir.myl.ON[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.GIR(data = all.bid.W1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.gir.myl.W1[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#  colnames(var.gir.myl.W1[[t]]) <- bank10.abbr;rownames(var.gir.myl.W1[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.GIR(data = all.bid.W2[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.gir.myl.W2[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#  colnames(var.gir.myl.W2[[t]]) <- bank10.abbr;rownames(var.gir.myl.W2[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.GIR(data = all.bid.M1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.gir.myl.M1[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#  colnames(var.gir.myl.M1[[t]]) <- bank10.abbr;rownames(var.gir.myl.M1[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.GIR(data = all.bid.M3[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.gir.myl.M3[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#  colnames(var.gir.myl.M3[[t]]) <- bank10.abbr;rownames(var.gir.myl.M3[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.GIR(data = all.bid.M6[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.gir.myl.M6[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#  colnames(var.gir.myl.M6[[t]]) <- bank10.abbr;rownames(var.gir.myl.M6[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.GIR(data = all.bid.M9[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.gir.myl.M9[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#  colnames(var.gir.myl.M9[[t]]) <- bank10.abbr;rownames(var.gir.myl.M9[[t]]) <- bank10.abbr
-#  
-#  temp <- dy.VAR.GIR(data = all.bid.Y1[paste0(y.period[t],"/",y.period[t+1])][,1:10], n.ahead = 1, mode = "fix", span = "yearly")
-#  var.gir.myl.Y1[[t]] <-matrix(temp$gir.matrix %>% unlist,10,10) 
-#  colnames(var.gir.myl.Y1[[t]]) <- bank10.abbr;rownames(var.gir.myl.Y1[[t]]) <- bank10.abbr
-#}
-
-
-
+if(network.y.type=="short"){
+  network.y <- aenet.myl.short
+}
+if(network.y.type=="long"){
+  network.y <- aenet.myl.long
+}
+if(network.y.type=="all"){
+  network.y <- aenet.myl.all
+}
+if(network.y.type=="ON"){
+  network.y <- aenet.myl.ON
+}
+if(network.y.type=="W1"){
+  network.y <- aenet.myl.W1
+}
+if(network.y.type=="W2"){
+  network.y <- aenet.myl.W2
+}
+if(network.y.type=="M1"){
+  network.y <- aenet.myl.M1
+}
+if(network.y.type=="M3"){
+  network.y <- aenet.myl.M3
+}
+if(network.y.type=="M6"){
+  network.y <- aenet.myl.M6
+}
+if(network.y.type=="M9"){
+  network.y <- aenet.myl.M9
+}
+if(network.y.type=="Y1"){
+  network.y <- aenet.myl.Y1
+}
 #################################################################
 # basic setting
 dyErgm.result <- dyCoefErgm.yearly(data = network.y[1:8], set = set, 

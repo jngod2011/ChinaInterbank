@@ -949,7 +949,7 @@ dyCoefErgm.yearly <- function(data, set,
   if(missing(triangle)){triangle <- "all"} # c("lower","upper")
   if(missing(directed)){directed <- TRUE} # TRUE FALSE
   
-  file.name <- paste0(set, "_", inclusion.edgecov)
+  filename <- paste0(set, "_", filename)
   
   total <- length(data)
   p.ergm.l <- c()
@@ -1540,7 +1540,7 @@ dyCoefErgm.yearly <- function(data, set,
       #timeend <- Sys.time()
       #runningtime<-timeend-timestart
       #if(runningtime/60 > 60*36-30){
-      file.path<-paste0("data/Rdata/", file.name,".Rdata")
+      file.path<-paste0("data/Rdata/", filename,".Rdata")
       save(coef.ergm.l,p.ergm.l,std.ergm.l,file = file.path)
       #}
     }
@@ -1548,7 +1548,7 @@ dyCoefErgm.yearly <- function(data, set,
   close(pb)
   
   if(csv){
-    file.path<-paste0("data/Rdata/", file.name,".Rdata")
+    file.path<-paste0("data/Rdata/", filename,".Rdata")
     save(coef.ergm.l,p.ergm.l,std.ergm.l,file = file.path)
   }
   
@@ -1576,7 +1576,7 @@ dyCoefErgm.yearly <- function(data, set,
         dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
         dySeries("Crisis", label = "Crisis", color = "black", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
       
-      file.path<-paste0("html/", file.name,".html")
+      file.path<-paste0("html/", filename,".html")
       saveWidget(saveWidget.dygraph, file = file.path(normalizePath(dirname(file.path)),basename(file.path)), selfcontained = F, libdir = NULL,background = "white", title = set, knitrOptions = list())
       
     }
@@ -1586,28 +1586,28 @@ dyCoefErgm.yearly <- function(data, set,
       for (i in 1:4) {
         if(i==1){
           dy.coef <- coef.ergm.l # 0
-          file.name <- paste0(set,"sig0")
+          filename <- paste0(set,"sig0")
         }
         if(i==2){
           dy.coef <- coef.ergm.l # 0
           dy.coef[p.ergm.l > 0.01] <- NA # 1
-          file.name <- paste0(set,"sig1")
+          filename <- paste0(set,"sig1")
         }
         if(i==3){
           dy.coef <- coef.ergm.l # 0
           dy.coef[p.ergm.l > 0.05] <- NA # 1
-          file.name <- paste0(set,"sig5")
+          filename <- paste0(set,"sig5")
         }
         if(i==4){
           dy.coef <- coef.ergm.l # 0
           dy.coef[p.ergm.l > 0.1] <- NA # 1
-          file.name <- paste0(set,"sig10")
+          filename <- paste0(set,"sig10")
         }
         
         dy.coef <- xts(dy.coef, as.Date(Date, format='%Y-%m-%d'))
         dy.coef <- merge(dy.coef, is.higher$crisis.sma20)
         dy.coef <- apply(X = dy.coef,MARGIN = 2,FUN = replace.na.near)
-        dy.coef <- xts(dy.coef, as.Date(Date, format='%Y-%m-%d'))
+        dy.coef <- xts(dy.coef, as.Date(index(is.higher), format='%Y-%m-%d'))
         names(dy.coef)[length(names(dy.coef))] <- "Crisis"
         
         color <- colorRampPalette(c("red", "blue"))(n.inclusion.edgecov)
@@ -1619,7 +1619,7 @@ dyCoefErgm.yearly <- function(data, set,
           dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
           dySeries("Crisis", label = "Crisis", color = "black", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
         
-        file.path<-paste0("html/", file.name,".html")
+        file.path<-paste0("html/", filename,".html")
         saveWidget(saveWidget.dygraph, file = file.path(normalizePath(dirname(file.path)),basename(file.path)), selfcontained = F, libdir = NULL,background = "white", title = set, knitrOptions = list())
       }
     }
@@ -2048,8 +2048,37 @@ split.equally <- function(x, size){
     names(list.return) <- c("y","n.list")
   return(list.return)
 } 
-
-
+####################################################################
+# Beautiful Correlation Tables in R 
+####################################################################
+#http://myowelt.blogspot.com/2008/04/beautiful-correlation-tables-in-r.html
+corstars <- function(x){ 
+  require(Hmisc) 
+  x <- as.matrix(x) 
+  R <- rcorr(x)$r 
+  p <- rcorr(x)$P 
+  
+  ## define notions for significance levels; spacing is important.
+  mystars <- ifelse(p < .001, "$^{***}$", ifelse(p < .01, "$^{**}$", ifelse(p < .05, "$^{*}$", " ")))
+  
+  ## trunctuate the matrix that holds the correlations to two decimal
+  R <- format(round(cbind(rep(-1.11, ncol(x)), R), 2))[,-1] 
+  
+  ## build a new matrix that includes the correlations with their apropriate stars 
+  Rnew <- matrix(paste(R, mystars, sep=""), ncol=ncol(x)) 
+  diag(Rnew) <- paste(diag(R), " ", sep="") 
+  rownames(Rnew) <- colnames(x) 
+  colnames(Rnew) <- paste(colnames(x), "", sep="") 
+  
+  ## remove upper triangle
+  Rnew <- as.matrix(Rnew)
+  Rnew[upper.tri(Rnew, diag = TRUE)] <- ""
+  Rnew <- as.data.frame(Rnew) 
+  
+  ## remove last column and return the matrix (which is now a data frame)
+  Rnew <- cbind(Rnew[1:length(Rnew)-1])
+  return(Rnew) 
+}
 
 
 
