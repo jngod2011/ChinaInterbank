@@ -1196,6 +1196,9 @@ dyCoefErgm.yearly <- function(data, set,
       if(!is.na(match("ncfo",inclusion.wind))){temp.y %v% "ncfo" <- temp.wind$ncfo} #客户贷款及垫款净增加额(万元)
       if(!is.na(match("ncfi",inclusion.wind))){temp.y %v% "ncfi" <- temp.wind$ncfi} #投资活动产生的现金流量净额(万元)
       if(!is.na(match("ncff",inclusion.wind))){temp.y %v% "ncff" <- temp.wind$ncff} #筹资活动产生的现金流量净额(万元)
+      if(!is.na(match("clnd",inclusion.wind))){temp.y %v% "clnd" <- temp.wind$clnd} #lnd+dlnd
+      if(!is.na(match("cbrr",inclusion.wind))){temp.y %v% "cbrr" <- temp.wind$cbrr} #brr+dbrr
+      
       temp.y %v% "ecl" <- c("SOB","SOB","SOB","SOB","JECB","JECB","JECB","JECB","JECB",
                             "UCB")
     }
@@ -2079,9 +2082,43 @@ corstars <- function(x){
   Rnew <- cbind(Rnew[1:length(Rnew)-1])
   return(Rnew) 
 }
-
-
-
+#https://gist.github.com/aL3xa/887249
+corstar <- function(x, y = NULL, use = "pairwise", method = "pearson", round = 3, row.labels, col.labels, ...) {
+  
+  require(psych)
+  
+  ct <- corr.test(x, y, use, method)    # calculate correlation
+  r <- ct$r                             # get correlation coefs
+  p <- ct$p                             # get p-values
+  
+  stars <- ifelse(p < .001, "$^{***}$", ifelse(p < .01, "$^{**}", ifelse(p < .05, "$^{*}", "   "))) # generate significance stars
+  
+  m <- matrix(NA, nrow = nrow(r) * 2, ncol = ncol(r) + 1) # create empty matrix
+  
+  rlab <- if(missing(row.labels)) rownames(r) else row.labels # add row labels
+  clab <- if(missing(col.labels)) {
+    if(is.null(colnames(r)))
+      deparse(substitute(y))
+    else
+      colnames(r)
+  } else {
+    col.labels # add column labels
+  }
+  
+  rows <- 1:nrow(m)                     # row indices
+  cols <- 2:ncol(m)                     # column indices
+  
+  odd <- rows %% 2 == 1                 # odd rows
+  even <- rows %% 2 == 0                # even rows
+  m[odd, 1] <- rlab                     # add variable names
+  m[even, 1] <- rep("", sum(even))      # add blank
+  
+  m[odd, cols] <- paste(format(round(r, round), nsmall = round, ...), stars, sep = "")     # add r coefs
+  m[even, cols] <- paste("(", format(round(p, round), nsmall = round, ...), ")", sep = "") # add p-values
+  
+  colnames(m) <- c(" ", clab)           # add colnames
+  m                                     # return matrix
+}
 
 
 

@@ -179,6 +179,128 @@ for (i in 1:length(combas.date)) {
 }
 save(matrix, p.matrix, d.matrix, p.d.matrix,file = "data/Rdata/latex_combas.Rdata")
 #################################################################
+# proportion loan and deposit interbank network
+#################################################################
+load(file = "data/Rdata/latex_combas.Rdata")
+bank10.Cname <- group.stockprice[bank10.abbr,"Cname"]
+#original intrbank network
+if(TRUE){
+  r.loan.network <- lapply(p.matrix[10:17], FUN = function(x){
+    y <- x/(10^12)
+    return(y)})
+  
+  r.deposit.network <- lapply(p.d.matrix[10:17], FUN = function(x){
+    y <- x/(10^12)
+    return(y)})#log(deposit.network %>% unlist,10)
+  
+  r.compound.network <- list()
+  for (i in 1:length(r.loan.network)) {
+    r.compound.network[[i]] <- r.loan.network[[i]] + r.deposit.network[[i]]
+  }
+}#scale#
+
+# divided the network by sum of lending of 10 banks
+if(TRUE){
+  pl.loan.network <- lapply(p.matrix[10:17], FUN = function(x){
+    y <- x/rowSums(x)
+    return(y)})
+  
+  pl.deposit.network <- lapply(p.d.matrix[10:17], FUN = function(x){
+    y <- x/rowSums(x)
+    return(y)})#log(deposit.network %>% unlist,10)
+  
+  pl.compound.network <- list()
+  for (i in 1:length(p.matrix)) {
+    pl.compound.network[[i]] <- p.matrix[[i]] + p.d.matrix[[i]]
+  }
+  pl.compound.network <- lapply(pl.compound.network[10:17], FUN = function(x){
+    y <- x/rowSums(x)
+    return(y)})
+}
+
+# divided the network by sum of borrwoing of 10 banks
+if(TRUE){
+  pb.loan.network <- lapply(p.matrix[10:17], FUN = function(x){
+    y <- x/colSums(x)
+    return(y)})
+  
+  pb.deposit.network <- lapply(p.d.matrix[10:17], FUN = function(x){
+    y <- x/colSums(x)
+    return(y)})#log(deposit.network %>% unlist,10)
+  
+  pb.compound.network <- list()
+  for (i in 1:length(p.matrix)) {
+    pb.compound.network[[i]] <- p.matrix[[i]] + p.d.matrix[[i]]
+  }
+  pb.compound.network <- lapply(pb.compound.network[10:17], FUN = function(x){
+    y <- x/colSums(x)
+    return(y)})
+}
+
+# divided the network by sum of borrowing of all banks
+if(TRUE){
+  ab.loan.network <- lapply(matrix[10:17], FUN = function(x){
+    y <- x/colSums(x)
+    locate <- sapply(bank10.Cname, grep, colnames(x)) %>% as.numeric
+    y <- y[locate, locate]
+    return(y)})
+  
+  for (i in 1:length(matrix[10:17])) {
+    x <- matrix[10:17][[i]]
+    y <- x/colSums(x)
+    locate <- sapply(bank10.Cname, grep, colnames(x)) %>% as.numeric
+    y <- y[locate, locate]
+  }
+  
+  ab.deposit.network <- lapply(d.matrix[10:17], FUN = function(x){
+    y <- x/colSums(x)
+    locate <- sapply(bank10.Cname, grep, colnames(x)) %>% as.numeric
+    y <- y[locate, locate]
+    return(y)})#log(deposit.network %>% unlist,10)
+  
+  ab.compound.network <- list()
+  for (i in 1:length(p.matrix)) {
+    ab.compound.network[[i]] <- matrix[[i]] + d.matrix[[i]]
+  }
+  ab.compound.network <- lapply(ab.compound.network[10:17], FUN = function(x){
+    y <- x/colSums(x)
+    locate <- sapply(bank10.Cname, grep, colnames(x)) %>% as.numeric
+    y <- y[locate, locate]
+    return(y)})
+}
+
+# divided the network by sum of lending of all banks
+if(TRUE){
+  al.loan.network <- lapply(matrix[10:17], FUN = function(x){
+    y <- x/rowSums(x)
+    locate <- sapply(bank10.Cname, grep, colnames(x)) %>% as.numeric
+    y <- y[locate, locate]
+    return(y)})
+  
+  al.deposit.network <- lapply(d.matrix[10:17], FUN = function(x){
+    y <- x/rowSums(x)
+    locate <- sapply(bank10.Cname, grep, colnames(x)) %>% as.numeric
+    y <- y[locate, locate]
+    return(y)})#log(deposit.network %>% unlist,10)
+  
+  al.compound.network <- list()
+  for (i in 1:length(p.matrix)) {
+    al.compound.network[[i]] <- matrix[[i]] + d.matrix[[i]]
+  }
+  al.compound.network <- lapply(al.compound.network[10:17], FUN = function(x){
+    y <- x/rowSums(x)
+    locate <- sapply(bank10.Cname, grep, colnames(x)) %>% as.numeric
+    y <- y[locate, locate]
+    return(y)})
+}
+
+save(r.loan.network, r.deposit.network, r.compound.network,
+     pl.loan.network, pl.deposit.network, pl.compound.network,
+     pb.loan.network, pb.deposit.network, pb.compound.network,
+     al.loan.network, al.deposit.network, al.compound.network,
+     ab.loan.network, ab.deposit.network, ab.compound.network,
+     file = "data/Rdata/latex_combas_rpa.Rdata")
+#################################################################
 # combas draw loan network
 #################################################################
 load(file = "data/Rdata/latex_combas.Rdata")
@@ -256,7 +378,7 @@ dy.date <- index(dy.data) %>% as.character
 dy.data <- apply(X = dy.data, MARGIN = 2,FUN = replace.na.near)
 dy.data <- xts(dy.data, as.Date(dy.date, format='%Y-%m-%d'))
 
-
+dy.main <- "structure"
 color <- c("blue","red","gray")#colorRampPalette(c("red", "blue"))(3)
 dygraph.interbank(dy.data = dy.data, dy.main, color, begin.dateWindow = index(dy.data)[1]) %>%
   dyAxis("y", label = "Coefficients", independentTicks = T) %>%
@@ -264,8 +386,8 @@ dygraph.interbank(dy.data = dy.data, dy.main, color, begin.dateWindow = index(dy
   dySeries("Crisis", label = "Crisis", color = "black", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2") %>%
   dyLimit(1, color = "gray") %>%
   dyLimit(2, color = "gray") %>%
-  dyAxis("y", valueRange = c(0, 2.5))
-
+  dyAxis("y", valueRange = c(0, 2.5)) %>% 
+  dyShading(from = 1, to = 2, color = "#FFFAF0", axis = "y")
 #################################################################
 # trimed interbank 10
 #################################################################
@@ -485,7 +607,8 @@ ggplot(data = draw, aes(x = Year, y = Proportion, fill = Type, frame = Year, cum
   labs(x = "Year", y = "Proportion", title = "", subtitle = "") +
   geom_text(aes(label = Proportion), color = "Black", size = 5, position = position_stack(vjust = 0.5)) + 
   #theme(axis.text.x = element_text(colour="Black",size=15), axis.text.y = element_text(colour="Black",size=15)) +
-          theme_minimal()
+          theme_minimal()+
+  scale_fill_manual(values=c("#FFBFC0","#BFC0FA"))
 #################################################################
 # data decription of loan and deposit data used to estimate networks
 #################################################################
@@ -558,6 +681,7 @@ wind.name <- read_excel(path = "data/windname.xlsx",sheet = "name",
 
 fnlist.wind <- dir("data/wind")
 raw.wind <- list()
+raw.wind.full <- list()
 length.fnlist <- length(fnlist.wind)
 for(i in 1:length.fnlist){
   temp <- read_excel(path = paste0("data/wind/",fnlist.wind[i]),
@@ -568,14 +692,7 @@ for(i in 1:length.fnlist){
   temp <- temp[temp$数据来源=="合并报表",]
   #print(paste("lending",length(temp$`拆出资金(万元)` %>% na.omit), "in",i))
   #print(paste("borrowing",length(temp$`拆入资金(万元)` %>% na.omit), "in",i))
-  
-  locate <- sapply(group.wind, grepl, temp$公司名称)
-  locate <- apply(locate, 2, which)
-  locate <- locate %>% unlist
-  temp <- temp[locate,]
-  #temp$公司名称 <- group[1,]
-  rownames(temp) <- bank10.abbr
-  #colnames(temp) <- c()
+
   temp$`向中央银行借款(万元)`[is.na(temp$`向中央银行借款(万元)`)] <- 0
   temp$`向中央银行借款净增加额(万元)`[is.na(temp$`向中央银行借款净增加额(万元)`)] <- 0
   temp$`向其他金融机构拆入资金净增加额(万元)`[is.na(temp$`向其他金融机构拆入资金净增加额(万元)`)] <- 0
@@ -583,43 +700,69 @@ for(i in 1:length.fnlist){
   temp$`客户贷款及垫款净增加额(万元)`[is.na(temp$`客户贷款及垫款净增加额(万元)`)] <- 0
   temp <- subset(temp, select =  -`应付利息(万元)`)
   temp <- subset(temp, select =  -`应收利息(万元)`)
-  temp <- subset(temp, select =  -`报告期`)
-  temp <- subset(temp, select =  -`公司名称`)
-  temp <- subset(temp, select =  -`数据来源`)
   #temp <- subset(temp, select =  -`基本每股收益(万/股)`)
   #temp <- subset(temp, select =  -`稀释每股收益(元/股)`)
   temp$`基本每股收益(万/股)` <- temp$`基本每股收益(万/股)` * (10^5)/10000*(12^10)#scale#
   temp$`稀释每股收益(元/股)` <- temp$`稀释每股收益(元/股)` * (10^5)/10000*(12^10)#scale#
   #temp$`应付利息(万元)` <- temp$`应付利息(万元)` /(10^6)/10000*(12^10)#scale#
   #temp$`应收利息(万元)` <- temp$`应收利息(万元)` /(10^6)/10000*(12^10)#scale#
+  temp.title <- temp[,c("公司名称","数据来源","报告期")]
+  temp <- subset(temp, select =  -`报告期`)
+  temp <- subset(temp, select =  -`公司名称`)
+  temp <- subset(temp, select =  -`数据来源`)
   
-  print(temp %>% is.na %>% sum)
+  #print(temp %>% is.na %>% sum)
   onames <- names(temp)
   names(temp) <- wind.name[,2][match(onames,wind.name[,1])]
   temp <- temp*10000/(12^10)#scale#
   #log(temp[1,] %>% abs,10) %>% ceiling
   #log(temp$asst %>% abs,10) %>% ceiling
+  raw.wind.full[[i]] <- temp
+  locate <- sapply(group.wind, grepl, temp.title$公司名称)
+  locate <- apply(locate, 2, which)
+  locate <- locate %>% unlist
+  temp <- temp[locate,]
+  rownames(temp) <- bank10.abbr
   raw.wind[[i]] <- temp
 }
 raw.wind <- F.fill.up.NAs(raw.wind)
-raw.wind %>% is.na %>% sum
-save(raw.wind, file = "data/Rdata/latex_raw.wind.Rdata")
-load(file = "data/Rdata/latex_raw.wind.Rdata")
-#################################################################
-# plot cor wind
-#################################################################
-#https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
-load(file = "data/Rdata/latex_raw.wind.Rdata")
+raw.wind.full <- F.fill.up.NAs(raw.wind.full)
+
+raw.wind %>% unlist %>%is.na %>% sum
+raw.wind.full %>%unlist%>% is.na %>% sum
+
+for (i in 1:length(raw.wind)) {
+  raw.wind[[i]]$clnd <- raw.wind[[i]]$lnd + raw.wind[[i]]$dlnd
+  raw.wind[[i]]$cbrr <- raw.wind[[i]]$brr + raw.wind[[i]]$dbrr
+}
+
+for (i in 1:length(raw.wind.full)) {
+  raw.wind.full[[i]]$clnd <- raw.wind.full[[i]]$lnd + raw.wind.full[[i]]$dlnd
+  raw.wind.full[[i]]$cbrr <- raw.wind.full[[i]]$brr + raw.wind.full[[i]]$dbrr
+}
+
+wind.full <- raw.wind.full[[1]]
+for (i in 2:length(raw.wind)) {
+  temp <- raw.wind.full[[i]]
+  wind.full <- rbind(wind,temp)
+}
+wind.full[is.na(wind.full)] <- 0
+
 wind <- raw.wind[[1]]
 for (i in 2:length(raw.wind)) {
   temp <- raw.wind[[i]]
   wind <- rbind(wind,temp)
 }
 
-names(wind)
-dim(wind)
-
+save(raw.wind, raw.wind.full, wind, wind.full, file = "data/Rdata/latex_raw.wind.Rdata")
+load(file = "data/Rdata/latex_raw.wind.Rdata")
+#################################################################
+# plot cor wind
+#################################################################
+#https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
+load(file = "data/Rdata/latex_raw.wind.Rdata")
 library(RColorBrewer)
+library(corrplot)
 res1 <- cor.mtest(wind, conf.level = .95)
 corrplot(cor(wind), p.mat = res1$p, insig = "blank",
          method = "color",
@@ -630,7 +773,7 @@ corrplot(cor(wind), p.mat = res1$p, insig = "blank",
          diag = FALSE
 )
 #
-selected.wind <- c("asst","lblt","lnd","brr","dlnd","dbrr","nprf", "grp")
+selected.wind <- c("asst","lblt","lnd","cbrr","brr","dlnd","dbrr","nprf", "grp")
 wind <- wind[,selected.wind]
 res1 <- cor.mtest(wind, conf.level = .95)
 corrplot(cor(wind), p.mat = res1$p, insig = "blank",
@@ -643,16 +786,8 @@ corrplot(cor(wind), p.mat = res1$p, insig = "blank",
 # summary wind
 #################################################################
 load(file = "data/Rdata/latex_raw.wind.Rdata")
-wind <- raw.wind[[1]]
-for (i in 2:length(raw.wind)) {
-  temp <- raw.wind[[i]]
-  wind <- rbind(wind,temp)
-}
 
-names(wind)
-dim(wind)
-
-selected.wind <- c("asst","lblt","lnd","brr","dlnd","dbrr")
+selected.wind <- c("asst","lblt","lnd","brr","dlnd","dbrr","clnd","cbrr","nprf", "grp")
 wind <- wind[,selected.wind]
 
 summary.wind <- sapply(wind %>% na.omit, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
@@ -660,7 +795,7 @@ summary.wind <- summary.wind %>% round(2) %>% t
 names(summary.wind) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
 write.xlsx(summary.wind, file = "latex/report/excel/summary_wind.xlsx", row.names = TRUE)
 
-summary.wind <- xtable(summary.wind, caption = "Data Description of Asset, Debt and Business Style",
+summary.wind <- xtable(summary.wind, caption = "Data Description of Banks' Operating Indicators",
                        label = "tab:summary_wind"
 )
 align(summary.wind) <- "llllllll"
@@ -674,14 +809,14 @@ print(summary.wind,
 # Correlation table with significance indicators for wind data
 #################################################################
 load(file = "data/Rdata/latex_raw.wind.Rdata")
-wind <- raw.wind[[1]]
-for (i in 2:length(raw.wind)) {
-  temp <- raw.wind[[i]]
-  wind <- rbind(wind,temp)
-}
-selected.wind <- c("asst","lblt","lnd","brr","dlnd","dbrr","nprf", "grp")
+selected.wind <- c("asst","lblt","lnd","brr","dlnd","dbrr","clnd","cbrr","nprf", "grp")
 wind <- wind[,selected.wind]
-correlation.table <- xtable(corstars(wind), caption = "Correlation Table",
+temp.corr <- corstar(wind)[-seq(2,length(selected.wind)*2,2),-1]
+rownames(temp.corr) <- colnames(temp.corr)
+temp.corr[upper.tri(temp.corr)] <- ""
+diag(temp.corr) <- ""
+
+correlation.table <- xtable(temp.corr, caption = "Correlation Matrix of Key Indicators",
                        label = "tab:correlation_table"
 )
 align(correlation.table) <-  combine_words(rep("l",dim(correlation.table)[2]+1),sep="",and = "")
@@ -696,7 +831,7 @@ print(correlation.table,
 # g.sp data description
 #################################################################
 names(g.sp) <- bank10.abbr
-summary.g.sp <- sapply(g.sp * 100, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
+summary.g.sp <- sapply(g.sp * 100, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)#scale#
 summary.g.sp <- summary.g.sp %>% round(2) %>% t
 names(summary.g.sp) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
 write.xlsx(summary.g.sp, file = "latex/report/excel/summary_g_sp.xlsx", row.names = TRUE)
@@ -777,7 +912,7 @@ table.ADFtest <- rbind(
 ) %>% t
 
 
-table.ADFtest <- xtable(table.ADFtest, caption = "Results of Unit Root Tests",
+table.ADFtest <- xtable(table.ADFtest, caption = "Unit Root Tests",
                         label = "tab:table_ADFtest")
 
 addtorow <- list(pos = list(0, 0,0),
@@ -846,7 +981,7 @@ for (i in 1:table.n) {
   if(COIN.res$eigen_pval[i] > 0.1){table.COINtest$eigen[i] <- round(COIN.res$eigen[i],2)}
 }#floor((rank.test(vecm.tsDyn, cval = 0.05, type = "eigen")$r+rank.test(vecm.tsDyn, cval = 0.05, type = "trace")$r)/2)
 
-table.COINtest <- xtable(table.COINtest, caption = paste("The Determination of Cointegration Ranks", tab.label,sep = " "),
+table.COINtest <- xtable(table.COINtest, caption = paste("Co-integration Test", tab.label,sep = " "),
                          label = paste0("tab:COINtest", tab.label)) 
 
 align(table.COINtest) <- paste0(rep("l",9), collapse = "")
