@@ -1,8 +1,9 @@
 #time###########################################################################################
 timestart <- Sys.time()
 #####################################################################
-ID <- c("1c")
+ID <- c("1")
 network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#
+interbank.type <- "r"#r#pl#pb#ab#al
 inclusion.edgecov <- c("short","long","loan","deposit")#loan#deposit#compound
 inclusion.nodecov <- NULL
 inclusion.both <- c("asst","cbrr")#NULL#c("asst")#,"ad"
@@ -19,7 +20,7 @@ set <- ""
 triangle <- "all"
 directed <- T
 BidType <- "aenet"
-filename <- paste0(network.y.type,"_",ID)#"_",network.x,
+filename <- paste0(network.y.type,"_",interbank.type,"_",ID)#"_",network.x,
 filename
 MCMLE.maxit <- 100
 trans <- c("y","ON","W1","W2","M1","M3","M6","M9","Y1","short","long","all")

@@ -95,12 +95,14 @@ dygraph.interbank(dy.data, dy.main, color) %>%
 #################################################################
 # summary shibor
 #################################################################
-summary.shibor <- sapply(shibor[,-1] %>% na.omit, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
+su.shibor <- shibor[,-1]
+names(su.shibor) <- c("O/N","W1","W2","M1","M3","M6","M9","Y1")
+summary.shibor <- sapply(su.shibor %>% na.omit, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
 summary.shibor <- summary.shibor %>% round(2) %>% t
 names(summary.shibor) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
 write.xlsx(summary.shibor, file = "latex/report/excel/summary_shibor.xlsx", row.names = TRUE)
 
-summary.shibor <- xtable(summary.shibor, caption = "Data Description of Shibor",
+summary.shibor <- xtable(summary.shibor, caption = "Data Summary of Shibor",
                        label = "tab:summary_shibor"
 )
 align(summary.shibor) <- "llllllll"
@@ -628,7 +630,7 @@ summary.data <- summary.data %>% round(2) %>% t
 names(summary.data) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
 write.xlsx(summary.data, file = "latex/report/excel/summary_interbank.xlsx", row.names = TRUE)
 
-summary.data <- xtable(summary.data, caption = "Data Description of Interbank Loan and Interbank Deposit",
+summary.data <- xtable(summary.data, caption = "Data Summary of Interbank Loan and Interbank Deposit",
                        label = "tab:summary_interbank"
 )
 align(summary.data) <- "llllllll"
@@ -642,8 +644,8 @@ print(summary.data,
 # bank list
 #################################################################
 appendix.group <- group.stockprice[bank10.abbr,c("Abbr","Ename", "Eclass")]
-names(appendix.group) <- c("Abbr","Name","Classification")
-appendix.group <- xtable(appendix.group, caption = "Bank List",
+names(appendix.group) <- c("Abbr","Full Name","Category")
+appendix.group <- xtable(appendix.group, caption = "Bank List of the Sample",
                          label = "tab:BankList") 
 
 align(appendix.group) <- paste0(rep("l",ncol(appendix.group)+1), collapse = "")
@@ -795,7 +797,7 @@ summary.wind <- summary.wind %>% round(2) %>% t
 names(summary.wind) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
 write.xlsx(summary.wind, file = "latex/report/excel/summary_wind.xlsx", row.names = TRUE)
 
-summary.wind <- xtable(summary.wind, caption = "Data Description of Banks' Operating Indicators",
+summary.wind <- xtable(summary.wind, caption = "Data Summary of Banks' Operating Indicators",
                        label = "tab:summary_wind"
 )
 align(summary.wind) <- "llllllll"
@@ -836,7 +838,7 @@ summary.g.sp <- summary.g.sp %>% round(2) %>% t
 names(summary.g.sp) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
 write.xlsx(summary.g.sp, file = "latex/report/excel/summary_g_sp.xlsx", row.names = TRUE)
 
-summary.g.sp <- xtable(summary.g.sp, caption = "Data Description of  Log Difference",
+summary.g.sp <- xtable(summary.g.sp, caption = "Data Summary of Stock Price in Log Difference",
                        label = "tab:summary_g_sp"
 )
 align(summary.g.sp) <- "llllllll"
