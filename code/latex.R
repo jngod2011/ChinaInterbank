@@ -19,6 +19,8 @@ n.all.bid.M6 <- paste0(bank10.abbr,".M6")
 n.all.bid.M9 <- paste0(bank10.abbr,".M9")
 n.all.bid.Y1 <- paste0(bank10.abbr,".Y1")
 data <- read.csv(file = "data/bank10/ForestData.csv")
+save(data,file = "data/Rdata/latex_ForestData.Rdata")
+
 data <- xts(data[,-1], as.Date(data[,1], format='%Y-%m-%d'))
 Date <- index(data) %>% as.character
 
@@ -41,11 +43,12 @@ group.stockprice <- read_excel(path = "data/stockprice.xlsx",
                                sheet = "group",
                                skip = 0,
                                col_names = T,
-                               col_types = rep("text", 5)) %>% as.data.frame
+                               col_types = c(rep("text", 7),"numeric")) %>% as.data.frame
 group.stockprice$Eclass <- factor(group.stockprice$Eclass, order = TRUE, levels = c("State-Owned Banks","Joint-Equity Commercial Banks","Urban Commercial Banks", "Rural Commercial Banks"))
 group.stockprice <- group.stockprice[order(group.stockprice$Eclass,decreasing = F),] 
 rownames(group.stockprice) <- group.stockprice$Abbr
 group.stockprice$color <- c(colorRampPalette(c("#B71C1C", "white"))(6)[-6], colorRampPalette(c("#FF9800", "white"))(10)[-10], colorRampPalette(c("#33691E", "white"))(7)[-7],colorRampPalette(c("#1A237E", "white"))(6)[-6])
+save(group.stockprice, file = "data/Rdata/latex_group.stockprice.Rdata")
 #################################################################
 # dygraph for SHIBOR
 #################################################################
@@ -81,7 +84,8 @@ is.higher$sum <- rowSums(is.higher[,-c(1,ncol(is.higher))])
 is.higher$crisis.sma20 <- TTR::SMA(is.higher$sum,20)
 is.higher$crisis <- cut(is.higher$sum,breaks = 5, include.lowest=F, labels = c(1:5))
 is.higher <- xts(is.higher, as.Date(is.higher$Date, format='%Y-%m-%d'))
-#y <- table(x) View(y)
+
+save(is.higher,file = "data/Rdata/latex_is.higher.Rdata")
 
 data <- cbind(shibor[,-1], as.data.frame(is.higher$crisis.sma20))
 names(data)[ncol(data)] <- "Crisis"
@@ -113,18 +117,25 @@ print(summary.shibor,
       comment = "TRUE"
 )
 #################################################################
-# load data for :combas draw loan and deposit network
+# combas loan and deposit network
 #################################################################
+library(NetworkRiskMeasures)
+load(file = "data/Rdata/latex_group.stockprice.Rdata")
+bank10.abbr <- c("SOBC", "SOICBC", "SOCCB", "SOBOC", "JEPF", "JEHB", "JECM", "JECI", "JECITIC", "URBJ")
 raw.data <- read_excel(path = "data/bank_combas.xlsx",
-                       sheet = 1,
+                       sheet = "raw",
                        skip = 0,
                        col_names = T,
                        col_types = c("numeric", "text", "numeric", "date", "text", rep("numeric", 67))) %>% as.data.frame
 names(raw.data) <- c("银行代码", "银行中文简称", "股票代码", "会计期间", "报表类型编码", "现金及存放中央银行款项", "贵金属", "存放同业款项", "拆出资金净额", "交易性金融资产", "衍生金融资产", "买入返售金融资产净额", "应收款项类投资", "其他应收款净额", "应收利息净额", "应收股利净额", "发放贷款及垫款净额", "定期存款", "可供出售金融资产净额", "持有至到期投资净额", "长期股权投资净额", "投资性房地产净额", "固定资产净额", "在建工程净额", "固定资产清理", "无形资产净额", "商誉净额", "长期待摊费用", "递延所得税资产", "其他资产", "资产总计", "向中央银行借款", "拆入资金", "吸收存款及同业存放", "其中：同业及其他金融机构存放款项", "其中：吸收存款", "短期借款", "交易性金融负债", "衍生金融负债", "卖出回购金融资产款", "应付职工薪酬", "应交税费", "应付利息", "应付股利", "递延收益-流动负债", "其他应付款", "长期借款", "应付债券", "预计负债", "递延收益-非流动负债", "递延所得税负债", "其他负债", "负债合计", "实收资本(或股本)", "其他权益工具", "其中：优先股", "其中：永续债", "其中：其他", "资本公积", "减：库存股", "专项储备", "其他综合收益", "盈余公积", "未分配利润", "外币报表折算差额", "未确认的投资损失", "一般风险准备", "交易风险准备", "归属于母公司所有者权益合计", "少数股东权益", "所有者权益合计", "负债与所有者权益总计")
-raw.data$银行中文简称[raw.data$银行中文简称 == "中国工商银行" ] <- "工商银行"
-raw.data$银行中文简称[raw.data$银行中文简称 == "中国建设银行" ] <- "建设银行"
-raw.data$银行中文简称[raw.data$银行中文简称 == "中国民生银行" ] <- "民生银行"
-raw.data$银行中文简称[raw.data$银行中文简称 == "中国农业银行" ] <- "农业银行"
+bank.id <- raw.data$银行代码 %>% unique
+for (i in 1:length(bank.id)) {
+  temp <- raw.data[raw.data$银行代码 == bank.id[i], "银行中文简称"] %>% unique %>% length
+  if(temp != 1){
+    print(bank.id[i])
+  }
+}
+
 combas.date <- unique(raw.data$会计期间)
 combas.date <- combas.date[order(combas.date)]
 p.matrix <- list()
@@ -147,7 +158,7 @@ for (i in 1:length(combas.date)) {
   locate <- locate %>% unlist
   data$银行类型[locate] <- "Policy Banks"
   
-  locate <- sapply(c("工商银行", "农业银行", "建设银行", "交通银行", "中国银行"), grepl, data$银行中文简称)
+  locate <- sapply(c("中国工商银行", "中国农业银行", "中国建设银行", "交通银行", "中国银行"), grepl, data$银行中文简称)
   locate <- apply(locate, 2, which)
   locate <- locate %>% unlist
   data$银行类型[locate] <- "State-Owned Banks"
@@ -161,24 +172,31 @@ for (i in 1:length(combas.date)) {
   data <- data[order(data$银行类型,decreasing = F),] 
   #View(data[locate,]$存放同业款项)
   #maximum entropy
-  locate <- sapply(group.stockprice[bank10.abbr,"Cname"], grepl, data$银行中文简称)
-  locate <- apply(locate, 2, which)
-  locate <- locate %>% unlist
+  locate <- match(group.stockprice[bank10.abbr,"Ccombas"],data$银行中文简称)
   #
   EstimatedMatrix.me <- matrix_estimation(rowsums = data$拆出资金净额, colsums = data$拆入资金, method = "me", max.it = 1000, abs.tol = 0.001, verbose = TRUE)
   rownames(EstimatedMatrix.me) <- data$银行中文简称
   colnames(EstimatedMatrix.me) <- data$银行中文简称
   matrix[[i]] <- EstimatedMatrix.me
   p.matrix[[i]] <- EstimatedMatrix.me[locate,locate]
+  colnames(p.matrix[[i]]) <- group.stockprice[bank10.abbr,"Cname"]
+  rownames(p.matrix[[i]]) <- group.stockprice[bank10.abbr,"Cname"]
   #
   EstimatedMatrix.me <- matrix_estimation(rowsums = data$存放同业款项, colsums = data$`其中：同业及其他金融机构存放款项`, method = "me", max.it = 1000, abs.tol = 0.001, verbose = TRUE)
   rownames(EstimatedMatrix.me) <- data$银行中文简称
   colnames(EstimatedMatrix.me) <- data$银行中文简称
   d.matrix[[i]] <- EstimatedMatrix.me
   p.d.matrix[[i]] <- EstimatedMatrix.me[locate,locate]
+  colnames(p.d.matrix[[i]]) <- group.stockprice[bank10.abbr,"Cname"]
+  rownames(p.d.matrix[[i]]) <- group.stockprice[bank10.abbr,"Cname"]
   
   data.interbank[[i]] <- data
 }
+
+names(matrix) <- paste0("year",substr(combas.date,1,4))
+names(p.matrix) <- paste0("year",substr(combas.date,1,4))
+names(d.matrix) <- paste0("year",substr(combas.date,1,4))
+names(p.d.matrix) <- paste0("year",substr(combas.date,1,4))
 save(matrix, p.matrix, d.matrix, p.d.matrix,file = "data/Rdata/latex_combas.Rdata")
 #################################################################
 # proportion loan and deposit interbank network
@@ -658,7 +676,7 @@ print(appendix.group,
       include.colnames = TRUE)
 
 #################################################################
-# wind scale
+# wind scale for 10 banks
 #################################################################
 group.stockprice[bank10.abbr,"Cname"]
 group.wind <- c("交通银行股份有限公司", 
@@ -720,6 +738,7 @@ for(i in 1:length.fnlist){
   #log(temp[1,] %>% abs,10) %>% ceiling
   #log(temp$asst %>% abs,10) %>% ceiling
   raw.wind.full[[i]] <- temp
+  #raw.wind.full[[i]]$name <- temp.title$
   locate <- sapply(group.wind, grepl, temp.title$公司名称)
   locate <- apply(locate, 2, which)
   locate <- locate %>% unlist
@@ -728,10 +747,10 @@ for(i in 1:length.fnlist){
   raw.wind[[i]] <- temp
 }
 raw.wind <- F.fill.up.NAs(raw.wind)
-raw.wind.full <- F.fill.up.NAs(raw.wind.full)
+#raw.wind.full <- F.fill.up.NAs(raw.wind.full)
 
 raw.wind %>% unlist %>%is.na %>% sum
-raw.wind.full %>%unlist%>% is.na %>% sum
+#raw.wind.full %>%unlist%>% is.na %>% sum
 
 for (i in 1:length(raw.wind)) {
   raw.wind[[i]]$clnd <- raw.wind[[i]]$lnd + raw.wind[[i]]$dlnd
@@ -746,7 +765,7 @@ for (i in 1:length(raw.wind.full)) {
 wind.full <- raw.wind.full[[1]]
 for (i in 2:length(raw.wind)) {
   temp <- raw.wind.full[[i]]
-  wind.full <- rbind(wind,temp)
+  wind.full <- rbind(wind.full,temp)
 }
 wind.full[is.na(wind.full)] <- 0
 
@@ -758,6 +777,47 @@ for (i in 2:length(raw.wind)) {
 
 save(raw.wind, raw.wind.full, wind, wind.full, file = "data/Rdata/latex_raw.wind.Rdata")
 load(file = "data/Rdata/latex_raw.wind.Rdata")
+#################################################################
+# wind loan and deposit network
+#################################################################
+library(NetworkRiskMeasures)
+group.wind <- group.stockprice[,"Cwind"]
+
+
+wind.name <- read_excel(path = "data/windname.xlsx",sheet = "name",
+                        skip = 0,
+                        col_names = F,
+                        col_types = c("text", "text" , "text")) %>% as.data.frame
+
+fnlist.wind <- dir("data/wind")
+raw.wind <- list()
+raw.wind.full <- list()
+length.fnlist <- length(fnlist.wind)
+for(i in 1:length.fnlist){
+  temp <- read_excel(path = paste0("data/wind/",fnlist.wind[i]),
+                     sheet = "万得",
+                     skip = 0,
+                     col_names = T,
+                     col_types = c("text", "text", rep("numeric", 55), "date")) %>% as.data.frame
+  temp <- temp[temp$数据来源=="合并报表",]
+  temp <- temp[apply(temp, 1, function(x) !all(is.na(x))),]
+  temp <- temp[,c("公司名称", "拆出资金(万元)", "拆入资金(万元)", "存放同业和其它金融机构款项(万元)", "同业和其它金融机构存放款项(万元)")]
+  temp[is.na(temp)] <- 0
+  temp[,-1] <- temp[,-1]*10000/(10^12)#scale#
+  locate <- match(group.wind, temp$公司名称)
+    
+  l.matrix <- matrix_estimation(rowsums = temp$"拆出资金(万元)", colsums = temp$"拆入资金(万元)", method = "me", max.it = 1000, abs.tol = 0.001, verbose = TRUE)
+  colnames(l.matrix) <- temp$"公司名称";rownames(l.matrix) <- temp$公司名称
+  p.l.matrix <- l.matrix[locate,locate]; p.l.matrix[is.na(p.l.matrix)] <- 0
+  colnames(p.l.matrix) <- group.stockprice[,"Abbr"];rownames(p.l.matrix) <- group.stockprice[,"Abbr"]
+  
+  
+  d.matrix <- matrix_estimation(rowsums = temp$"存放同业和其它金融机构款项(万元)", colsums = temp$"同业和其它金融机构存放款项(万元)", method = "me", max.it = 1000, abs.tol = 0.001, verbose = TRUE)
+  colnames(d.matrix) <- temp$"公司名称";rownames(d.matrix) <- temp$公司名称
+  p.d.matrix <- d.matrix[locate,locate]; p.d.matrix[is.na(p.d.matrix)] <- 0
+  colnames(p.d.matrix) <- group.stockprice[,"Abbr"];rownames(p.d.matrix) <- group.stockprice[,"Abbr"]
+}
+save(l.matrix,p.l.matrix,d.matrix,p.d.matrix, file = "data/Rdata/latex_interbank_wind.Rdata")
 #################################################################
 # plot cor wind
 #################################################################
@@ -1359,12 +1419,12 @@ for (t in 1:(length(y.period)-2)) {
     vecm.myl.gir[[t]] <- temp
     colnames(vecm.myl.gir[[t]]) <- bank10.abbr;rownames(vecm.myl.gir[[t]]) <- bank10.abbr
 
-    var.gir0 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly")[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow =10,ncol = 10)
-    var.gir1 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly")[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow =10,ncol = 10)
-    var.gir2 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 2, span = "yearly")[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow =10,ncol = 10)
-    var.gir3 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 3, span = "yearly")[[1]];var.gir3 <- matrix(data = unlist(var.gir3),nrow =10,ncol = 10)
-    var.gir4 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 4, span = "yearly")[[1]];var.gir4 <- matrix(data = unlist(var.gir4),nrow =10,ncol = 10)
-    var.gir5 <- dy.VAR.GIR(data = sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 5, span = "yearly")[[1]];var.gir5 <- matrix(data = unlist(var.gir5),nrow =10,ncol = 10)
+    var.gir0 <- dy.VAR.GIR(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 0, span = "yearly")[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow =10,ncol = 10)
+    var.gir1 <- dy.VAR.GIR(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 1, span = "yearly")[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow =10,ncol = 10)
+    var.gir2 <- dy.VAR.GIR(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 2, span = "yearly")[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow =10,ncol = 10)
+    var.gir3 <- dy.VAR.GIR(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 3, span = "yearly")[[1]];var.gir3 <- matrix(data = unlist(var.gir3),nrow =10,ncol = 10)
+    var.gir4 <- dy.VAR.GIR(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 4, span = "yearly")[[1]];var.gir4 <- matrix(data = unlist(var.gir4),nrow =10,ncol = 10)
+    var.gir5 <- dy.VAR.GIR(data = g.sp[paste0(y.period[t],"/",y.period[t+1])], n.ahead = 5, span = "yearly")[[1]];var.gir5 <- matrix(data = unlist(var.gir5),nrow =10,ncol = 10)
     GIR <- array(c(var.gir0,
                    var.gir1,
                    var.gir2,
@@ -1395,3 +1455,217 @@ save(y.period,
      file = "data/Rdata/latex_yearly_networky.Rdata"
 )
 
+#################################################################
+# sp since 2000 is.listed
+#################################################################
+load(file = "data/Rdata/latex_group.stockprice.Rdata")
+raw.stockprice <- read_excel(path = "data/stockprice.xlsx",
+                             sheet = 1,
+                             skip = 4,
+                             col_names = F,
+                             col_types = c("date", rep("numeric", 25))) %>% as.data.frame
+names(raw.stockprice) <- c("Date",group.stockprice$Abbr)
+
+sp.all <- raw.stockprice[,c("Date",group.stockprice$Abbr)]
+Date <- sp.all$Date %>% as.character
+Date <- substr(Date, 1, 4)# %>% unique#1991:2018
+table(Date)
+sp.all <- xts(raw.stockprice[,-1], as.Date(raw.stockprice$Date, format='%Y-%m-%d'))
+
+Date.year <- paste0(c(1991:2018),"-01-01")
+l.is.listed <- list()
+l.is.listed0 <- list()
+for (i in 1:(length(Date.year)-1)) {
+  temp <- sp.all[paste0(Date.year[i],"/",Date.year[i+1])]
+  is.listed <- apply(temp, MARGIN = 2, FUN = function(x){
+    y <- sum(is.na(x))/length(x)
+    return(y)
+  })
+  
+  l.is.listed[[i]] <- names(is.listed[is.listed==0])
+  l.is.listed0[[i]] <- names(is.listed[is.listed<0.5])
+  #print(paste0(c("###########"),c(1991:2018)[i],c("###########")))
+  #print(test)
+}
+
+names(l.is.listed) <- paste0("year",c(1991:2017))
+lapply(l.is.listed0,length) %>% unlist-
+  lapply(l.is.listed,length) %>% unlist
+
+
+l.sp.all <- list()
+l.sp.all.full <- list()
+for (i in 1:length(c(1991:2017))) {
+  l.sp.all.full[[i]] <- temp[,l.is.listed[[i]]] %>% na.omit
+  temp <- sp.all[paste0(Date.year[i],"/",Date.year[i+1])]
+  l.sp.all[[i]] <- temp[,l.is.listed[[i]]] %>% na.omit
+  print(c(1991:2017)[[i]])
+  print(dim(l.sp.all[[i]]))
+}
+names(l.sp.all) <- paste0("year",c(1991:2017))
+
+l.sp.all <- l.sp.all[-c(1:length(1991:1999))]
+l.sp.all.full <- l.sp.all.full[-c(1:length(1991:1999))]
+l.is.listed <- l.is.listed[-c(1:length(1991:1999))]
+names(l.sp.all)
+
+save(l.is.listed,l.sp.all,l.sp.all.full,file = "data/Rdata/latex_sp.all.Rdata")
+#################################################################
+# wind scale for all availiable banks
+#################################################################
+load(file = "data/Rdata/latex_group.stockprice.Rdata")
+load(file = "data/Rdata/latex_sp.all.Rdata")
+
+l.is.listed <- l.is.listed[-c(18)]#"year2017"
+l.is.listed <- l.is.listed[-c(1:length(2000:2006))] 
+temp.list <- l.is.listed %>% unlist %>% unique
+temp.Cwind <- group.stockprice[match(temp.list, group.stockprice$Abbr),"Cwind"]
+temp.Abbr <- group.stockprice[match(temp.list, group.stockprice$Abbr),"Abbr"]
+
+wind.name <- read_excel(path = "data/windname.xlsx",sheet = "name",
+                        skip = 0,
+                        col_names = F,
+                        col_types = c("text", "text" , "text")) %>% as.data.frame
+
+fnlist.wind <- dir("data/wind")
+raw.wind <- list()
+raw.wind.full <- list()
+length.fnlist <- length(fnlist.wind)
+for(i in 1:length.fnlist){
+  temp <- read_excel(path = paste0("data/wind/",fnlist.wind[i]),
+                     sheet = "万得",
+                     skip = 0,
+                     col_names = T,
+                     col_types = c("text", "text", rep("numeric", 55), "date")) %>% as.data.frame
+  temp <- temp[temp$数据来源=="合并报表",]
+  temp$`向中央银行借款(万元)`[is.na(temp$`向中央银行借款(万元)`)] <- 0
+  temp$`向中央银行借款净增加额(万元)`[is.na(temp$`向中央银行借款净增加额(万元)`)] <- 0
+  temp$`向其他金融机构拆入资金净增加额(万元)`[is.na(temp$`向其他金融机构拆入资金净增加额(万元)`)] <- 0
+  temp$`客户存款和同业存放款项净增加额(万元)`[is.na(temp$`客户存款和同业存放款项净增加额(万元)`)] <- 0
+  temp$`客户贷款及垫款净增加额(万元)`[is.na(temp$`客户贷款及垫款净增加额(万元)`)] <- 0
+  temp <- subset(temp, select =  -`应付利息(万元)`)
+  temp <- subset(temp, select =  -`应收利息(万元)`)
+  temp$`基本每股收益(万/股)` <- temp$`基本每股收益(万/股)` * (10^5)/10000*(12^10)#scale#
+  temp$`稀释每股收益(元/股)` <- temp$`稀释每股收益(元/股)` * (10^5)/10000*(12^10)#scale#
+  temp.title <- temp[,c("公司名称","数据来源","报告期")]
+  temp <- subset(temp, select =  -`报告期`)
+  temp <- subset(temp, select =  -`公司名称`)
+  temp <- subset(temp, select =  -`数据来源`)
+
+  
+  onames <- names(temp)
+  names(temp) <- wind.name[,2][match(onames,wind.name[,1])]
+  temp <- temp*10000/(12^10)#scale#
+
+  locate <- sapply(temp.Cwind, grepl, temp.title$公司名称)
+  locate <- apply(locate, 2, which)
+  locate <- locate %>% unlist
+  temp <- temp[locate,]
+  rownames(temp) <- temp.Abbr
+  raw.wind[[i]] <- temp
+
+}
+raw.wind <- F.fill.up.NAs(raw.wind)
+raw.wind %>% unlist %>%is.na %>% sum
+
+for (i in 1:length(raw.wind)) {
+  temp <- raw.wind[[i]]
+  raw.wind[[i]] <- temp[l.is.listed[[i]],] 
+  #print(dim(raw.wind[[i]]))
+}
+
+for (i in 1:length(raw.wind)) {
+  raw.wind[[i]]$clnd <- raw.wind[[i]]$lnd + raw.wind[[i]]$dlnd
+  raw.wind[[i]]$cbrr <- raw.wind[[i]]$brr + raw.wind[[i]]$dbrr
+}
+
+save(raw.wind, file = "data/Rdata/latex_raw.wind_all.Rdata")
+#################################################################
+# save yearly network y for all avaiable banks
+#################################################################
+load(file = "data/Rdata/latex_sp.all.Rdata")#
+l.is.listed <- l.is.listed[-length(l.is.listed)]
+l.is.listed <- l.is.listed[-c(1:length(2000:2006))]
+
+l.sp.all <- l.sp.all[-length(l.sp.all)]
+l.sp.all <- l.sp.all[-c(1:length(2000:2006))]
+
+l.sp.all.full <- l.sp.all.full[-length(l.sp.all.full)]
+l.sp.all.full <- l.sp.all.full[-c(1:length(2000:2006))]
+
+var.myl.gir <- list()
+vecm.myl.gir <- list()
+network.y <- list()
+y.period <- c(
+  "2006-12-31",
+  "2007-12-31",
+  "2008-12-31",
+  "2009-12-31",
+  "2010-12-31",
+  "2011-12-31",
+  "2012-12-31",
+  "2013-12-31",
+  "2014-12-31",
+  "2015-12-31",
+  "2016-12-31"
+  #,#"2017-12-31"
+)
+
+# the sample in 2018 is too small
+for (t in 1:(length(y.period)-1)) {
+  temp.abbr <- l.is.listed[[t]]
+  temp.data <- l.sp.all.full[[t]]
+  n.bank <- ncol(temp.data)
+  try.error <- try(vecm.tsDyn <- VECM(data = temp.data, lag=2, estim="ML"),silent = TRUE)#Type of estimator: 2OLS for the two-step approach or ML for Johansen MLE
+  rank.test <- vecm.tsDyn
+  rank.eigen <- rank.test(vecm.tsDyn, cval = 0.01, type = "eigen")$r
+  rank.trace <- rank.test(vecm.tsDyn, cval = 0.01, type = "trace")$r
+  rank <- floor((rank.eigen + rank.trace)/2)#4
+  temp.data <- l.sp.all[[t]]
+  
+  vecm.gir0 <- dy.VECM.GIR(data = temp.data, n.ahead = 0, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir0 <- matrix(data = unlist(vecm.gir0),nrow = n.bank, ncol = n.bank)
+  vecm.gir1 <- dy.VECM.GIR(data = temp.data, n.ahead = 1, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir1 <- matrix(data = unlist(vecm.gir1),nrow = n.bank, ncol = n.bank)
+  vecm.gir2 <- dy.VECM.GIR(data = temp.data, n.ahead = 2, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir2 <- matrix(data = unlist(vecm.gir2),nrow = n.bank, ncol = n.bank)
+  vecm.gir3 <- dy.VECM.GIR(data = temp.data, n.ahead = 3, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir3 <- matrix(data = unlist(vecm.gir3),nrow = n.bank, ncol = n.bank)
+  vecm.gir4 <- dy.VECM.GIR(data = temp.data, n.ahead = 4, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir4 <- matrix(data = unlist(vecm.gir4),nrow = n.bank, ncol = n.bank)
+  vecm.gir5 <- dy.VECM.GIR(data = temp.data, n.ahead = 5, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir5 <- matrix(data = unlist(vecm.gir5),nrow = n.bank, ncol = n.bank)
+  GIR <- array(c(vecm.gir0,
+                 vecm.gir1,
+                 vecm.gir2,
+                 vecm.gir3,
+                 vecm.gir4,
+                 vecm.gir5), dim = c(n.bank,n.bank,6))
+  temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+  temp <- matrix(temp %>% unlist,n.bank,n.bank) #%>% t
+  vecm.myl.gir[[t]] <- temp
+  colnames(vecm.myl.gir[[t]]) <- temp.abbr;rownames(vecm.myl.gir[[t]]) <- temp.abbr
+  
+  temp.data <- l.sp.all[[t]]
+  temp.date <- index(l.sp.all[[t]])[-1]
+  temp.data <- as.data.frame(apply(X = temp.data, MARGIN = 2, FUN = log_GrowthRate))
+  temp.data <- xts(temp.data, as.Date(temp.date, format='%Y-%m-%d'))
+  
+  var.gir0 <- dy.VAR.GIR(data = temp.data, n.ahead = 0, span = "yearly")[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow = n.bank,ncol = n.bank)
+  var.gir1 <- dy.VAR.GIR(data = temp.data, n.ahead = 1, span = "yearly")[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow = n.bank,ncol = n.bank)
+  var.gir2 <- dy.VAR.GIR(data = temp.data, n.ahead = 2, span = "yearly")[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow = n.bank,ncol = n.bank)
+  var.gir3 <- dy.VAR.GIR(data = temp.data, n.ahead = 3, span = "yearly")[[1]];var.gir3 <- matrix(data = unlist(var.gir3),nrow = n.bank,ncol = n.bank)
+  var.gir4 <- dy.VAR.GIR(data = temp.data, n.ahead = 4, span = "yearly")[[1]];var.gir4 <- matrix(data = unlist(var.gir4),nrow = n.bank,ncol = n.bank)
+  var.gir5 <- dy.VAR.GIR(data = temp.data, n.ahead = 5, span = "yearly")[[1]];var.gir5 <- matrix(data = unlist(var.gir5),nrow = n.bank,ncol = n.bank)
+  GIR <- array(c(var.gir0,
+                 var.gir1,
+                 var.gir2,
+                 var.gir3,
+                 var.gir4,
+                 var.gir5), dim = c(n.bank,n.bank,6))
+  temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+  temp <- matrix(temp %>% unlist,n.bank,n.bank) #%>% t
+  var.myl.gir[[t]] <- temp
+  colnames(var.myl.gir[[t]]) <- temp.abbr;rownames(var.myl.gir[[t]] ) <- temp.abbr
+  
+}
+
+save(y.period,
+     vecm.myl.gir,
+     var.myl.gir,
+     file = "data/Rdata/latex_yearly_networky_all.Rdata"
+)

@@ -476,3 +476,64 @@ print(tab,
       include.colnames = T
 )
 
+#################################################################
+# sp since 2000 is.listed
+#################################################################
+group.stockprice <- read_excel(path = "data/stockprice.xlsx",
+                               sheet = "group",
+                               skip = 0,
+                               col_names = T,
+                               col_types = rep("text", 5)) %>% as.data.frame
+group.stockprice$Eclass <- factor(group.stockprice$Eclass, order = TRUE, levels = c("State-Owned Banks","Joint-Equity Commercial Banks","Urban Commercial Banks", "Rural Commercial Banks"))
+group.stockprice.all <- group.stockprice[order(group.stockprice$Eclass,decreasing = F),] 
+rownames(group.stockprice.all) <- group.stockprice.all$Abre
+group.stockprice.all$color <- c(colorRampPalette(c("#B71C1C", "white"))(6)[-6], colorRampPalette(c("#FF9800", "white"))(10)[-10], colorRampPalette(c("#33691E", "white"))(7)[-7],colorRampPalette(c("#1A237E", "white"))(6)[-6])
+
+raw.stockprice <- read_excel(path = "data/stockprice.xlsx",
+                             sheet = 1,
+                             skip = 4,
+                             col_names = F,
+                             col_types = c("date", rep("numeric", 25))) %>% as.data.frame
+names(raw.stockprice) <- c("Date",group.stockprice$Abbr)
+
+sp.all <- raw.stockprice[,c("Date",group.stockprice.all$Abbr)]
+Date <- sp.all$Date %>% as.character
+Date <- substr(Date, 1, 4)# %>% unique#1991:2018
+table(Date)
+sp.all <- xts(raw.stockprice[,-1], as.Date(raw.stockprice$Date, format='%Y-%m-%d'))
+
+Date.year <- paste0(c(1991:2018),"-01-01")
+l.is.listed <- list()
+l.is.listed0 <- list()
+for (i in 1:(length(Date.year)-1)) {
+  temp <- sp.all[paste0(Date.year[i],"/",Date.year[i+1])]
+  is.listed <- apply(temp, MARGIN = 2, FUN = function(x){
+    y <- sum(is.na(x))/length(x)
+    return(y)
+  })
+  
+  l.is.listed[[i]] <- names(is.listed[is.listed==0])
+  l.is.listed0[[i]] <- names(is.listed[is.listed<0.5])
+  #print(paste0(c("###########"),c(1991:2018)[i],c("###########")))
+  #print(test)
+}
+
+names(l.is.listed) <- paste0("year",c(1991:2017))
+lapply(l.is.listed0,length) %>% unlist-
+lapply(l.is.listed,length) %>% unlist
+
+
+l.sp.all <- list()
+for (i in 1:length(c(1991:2017))) {
+   temp <- sp.all[paste0(Date.year[i],"/",Date.year[i+1])]
+   l.sp.all[[i]] <- temp[,l.is.listed[[i]]] %>% na.omit
+   print(c(1991:2017)[[i]])
+   print(dim(l.sp.all[[i]]))
+}
+names(l.sp.all) <- paste0("year",c(1991:2017))
+
+l.sp.all <- l.sp.all[-c(1:length(1991:1999))]
+l.is.listed <- l.is.listed[-c(1:length(1991:1999))]
+names(l.sp.all)
+
+save(l.is.listed,l.sp.all,file = "data/Rdata/latex_sp.all.Rdata")
