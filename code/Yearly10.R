@@ -93,9 +93,8 @@ n.all.bid.M6 <- paste0(bank10.abbr,".M6")
 n.all.bid.M9 <- paste0(bank10.abbr,".M9")
 n.all.bid.Y1 <- paste0(bank10.abbr,".Y1")
 #loan###########################################################################################
-#load(file = "data/Rdata/latex_combas.Rdata")
-load(file = "data/Rdata/latex_combas_rpa.Rdata")
 
+load(file = "data/Rdata/latex_wind_rpa.Rdata")
 if(interbank.type == "r"){
   loan.network <- r.loan.network
   deposit.network <- r.deposit.network
