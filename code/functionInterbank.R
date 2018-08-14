@@ -156,6 +156,7 @@ aenet.fix <- function(data, start.point = "NULL", end.point = "NULL", fix){
     m.coef.aenet[m.coef.aenet == 0] <- NA 
     list.aenet[[1]] <- m.coef.aenet
     
+    t=1
     setTxtProgressBar(pb, t)
   }else{
     for (t in 1:(dim(data)[1]-fix)) {

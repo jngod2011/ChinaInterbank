@@ -2,11 +2,11 @@
 timestart <- Sys.time()
 #####################################################################
 ID <- c("1")
-network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#
+network.y.type <- "short"#"VECM.GIR"#VAR.GIR#
 interbank.type <- "r"#r#pl#pb#ab#al
-inclusion.edgecov <- c("loan","deposit")#loan#deposit#compound
+inclusion.edgecov <- c("loan.so","loan.je","loan.ot")#loan#deposit#compound
 inclusion.nodecov <- NULL
-inclusion.both <- c("asst","cbrr")#NULL#c("asst")#,"ad"
+inclusion.both <- c("asst")#NULL#c("asst")#,"ad"
 library(knitr)
 network.x <- NULL#combine_words(inclusion.edgecov, and = "",sep = "-",before ="",after = "")
 inclusion.out <- NULL##NULL#"dlnd"#,"dfa""dlnd",
@@ -71,50 +71,131 @@ library(stargazer)
 source("code/function.R")
 source("code/functionInterbank.R")
 source("code/functionNewRMB.R")
-#load data###########################################################################################
-load(file = "data/Rdata/latex_sp.all.Rdata")#l.is.listed;l.sp.all
-load(file = "data/Rdata/latex_group.stockprice.Rdata")
-l.is.listed <- l.is.listed[-length(l.is.listed)]
-l.is.listed <- l.is.listed[-c(1:length(1991:2006))]
-#interbank network###########################################################################################
-load(file = "data/Rdata/latex_raw.wind_all.Rdata")
-#interbank network###########################################################################################
-load(file = "data/Rdata/latex_interbank_wind.Rdata")
-load(file = "data/Rdata/latex_group.stockprice.Rdata")
-
-l.matrix.all <- list()
-for (i in 1:length(2007:2016)) {
-  temp.Cwind <- group.stockprice[l.is.listed[[i]],"Cwind"]
-  temp.locate <- match(temp.Cwind,colnames(l.matrix[[i]]))
-  temp.matrix <- l.matrix[[i]][temp.locate,temp.locate]
-  temp.matrix[is.na(temp.matrix)] <- 0
-  colnames(temp.matrix) <- l.is.listed[[i]];rownames(temp.matrix) <- l.is.listed[[i]]
-  l.matrix.all[[i]] <- temp.matrix
-}
-
-d.matrix.all <- list()
-for (i in 1:length(2007:2016)) {
-  temp.Cwind <- group.stockprice[l.is.listed[[i]],"Cwind"]
-  temp.locate <- match(temp.Cwind,colnames(d.matrix[[i]]))
-  temp.matrix <- d.matrix[[i]][temp.locate,temp.locate]
-  temp.matrix[is.na(temp.matrix)] <- 0
-  colnames(temp.matrix) <- l.is.listed[[i]];rownames(temp.matrix) <- l.is.listed[[i]]
-  d.matrix.all[[i]] <- temp.matrix
-}
-
-loan.network <- l.matrix.all
-deposit.network <- d.matrix.all
+#wind###########################################################################################
+load(file = "data/Rdata/latex_shiborbid_raw.wind.Rdata")
+raw.wind <- raw.wind.full
 #network###########################################################################################
-load(file = "data/Rdata/latex_yearly_networky_all.Rdata")
+y.period <- c(#"2006-12-31",
+  "2007-12-31",
+  "2008-12-31",
+  "2009-12-31",
+  "2010-12-31",
+  "2011-12-31",
+  "2012-12-31",
+  "2013-12-31",
+  "2014-12-31",
+  "2015-12-31",
+  "2016-12-31"
+  #"2017-12-31",
+  #"2018-12-31"
+)
+# the sample in 2018 is too small
+load(file = "data/Rdata/latex_ALLshiborbid_aenet.Rdata")
+list.bank <- list.bank[c(-1,-12,-13)]
 if(network.y.type=="VECM.GIR"){
-  network.y <- vecm.myl.gir
+  network.y <- vecm.myl.gir[c(-1,-12,-13)]
 }
 if(network.y.type=="VAR.GIR"){
-  network.y <- var.myl.gir
+  network.y <- var.myl.gir[c(-1,-12,-13)]
+}
+if(network.y.type=="short"){
+  network.y <- aenet.myl.short[c(-1,-12,-13)]
+}
+if(network.y.type=="long"){
+  network.y <- aenet.myl.long[c(-1,-12,-13)]
+}
+if(network.y.type=="all"){
+  network.y <- aenet.myl.all[c(-1,-12,-13)]
+}
+if(network.y.type=="ON"){
+  network.y <- aenet.myl.ON[c(-1,-12,-13)]
+}
+if(network.y.type=="W1"){
+  network.y <- aenet.myl.W1[c(-1,-12,-13)]
+}
+if(network.y.type=="W2"){
+  network.y <- aenet.myl.W2[c(-1,-12,-13)]
+}
+if(network.y.type=="M1"){
+  network.y <- aenet.myl.M1[c(-1,-12,-13)]
+}
+if(network.y.type=="M3"){
+  network.y <- aenet.myl.M3[c(-1,-12,-13)]
+}
+if(network.y.type=="M6"){
+  network.y <- aenet.myl.M6[c(-1,-12,-13)]
+}
+if(network.y.type=="M9"){
+  network.y <- aenet.myl.M9[c(-1,-12,-13)]
+}
+if(network.y.type=="Y1"){
+  network.y <- aenet.myl.Y1[c(-1,-12,-13)]
+}
+#loan###########################################################################################
+load(file = "data/Rdata/latex_shiborbid_LoanDeposit.Rdata")
+load(file = "data/Rdata/latex_group.bid.full.Rdata")
+loan.network <- list()
+loan.network.so <- list()
+loan.network.je <- list()
+loan.network.ot <- list()
+if(interbank.type == "r"){
+  loan.network <- loan
+  for (i in 1:length(loan)) {
+    temp.id <- match(colnames(loan[[i]]),group.bid$Abbr)
+    
+    locate <- which(group.bid$Eclass[temp.id]!="State-Owned Banks")
+    temp <- loan[[i]]
+    temp[locate,] <- 0
+    temp[,locate] <- 0
+    loan.network.so[[i]] <- temp
+    
+    locate <- which(group.bid$Eclass[temp.id]!="Joint-Equity Commercial Banks")
+    temp <- loan[[i]]
+    temp[locate,] <- 0
+    temp[,locate] <- 0
+    loan.network.je[[i]] <- temp
+    
+    locate <- which(group.bid$Eclass[temp.id]=="State-Owned Banks" |
+                      group.bid$Eclass[temp.id]=="Joint-Equity Commercial Banks")
+    temp <- loan[[i]]
+    temp[locate,] <- 0
+    temp[,locate] <- 0
+    loan.network.ot[[i]] <- temp
+  }
+}
+
+deposit.network <- deposit
+compound.network <- list()
+for (i in 1:length(loan)) {
+  compound.network[[i]] <- loan[[i]] + deposit[[i]]
+}
+
+if(interbank.type == "pl"){
+  loan.network <- pl.loan.network
+  deposit.network <- pl.deposit.network
+  compound.network <- pl.compound.network
+}
+
+if(interbank.type == "pb"){
+  loan.network <- pb.loan.network
+  deposit.network <- pb.deposit.network
+  compound.network <- pb.compound.network
+}
+
+if(interbank.type == "ab"){
+  loan.network <- ab.loan.network
+  deposit.network <- ab.deposit.network
+  compound.network <- ab.compound.network
+}
+
+if(interbank.type == "al"){
+  loan.network <- al.loan.network
+  deposit.network <- al.deposit.network
+  compound.network <- al.compound.network
 }
 #################################################################
 # basic setting
-dyErgm.result <- dyCoefErgm.yearly(data = network.y, set = set, 
+dyErgm.result <- dyCoefErgm.yearly(data = network.y[1:10], set = set, 
                                    inclusion.edgecov = inclusion.edgecov,
                                    inclusion.nodecov = inclusion.nodecov, inclusion.nodeocov = inclusion.nodeocov, inclusion.nodeicov = inclusion.nodeicov,
                                    inclusion.absdiff = inclusion.absdiff,
@@ -129,7 +210,7 @@ dyErgm.result <- dyCoefErgm.yearly(data = network.y, set = set,
                                    triangle = triangle,
                                    directed = directed,
                                    tab = T, csv = F,
-                                   wind = raw.wind
+                                   wind = raw.wind[1:10]
 )
 
 dyErgm.result$scale;
@@ -145,13 +226,3 @@ stargazer(dyErgm.result$result.vergm.l, title = "results of yearly ERGMs", dep.v
           label = paste0("tab:",filename), 
           out = paste0(filename,".tex"), table.placement = "H", out.header = FALSE, no.space = TRUE, nobs = TRUE, model.numbers=FALSE, type = "latex")#type
 
-#Number & 7 & 14 & 14 & 14 & 16 & 16 & 16 & 16 & 16 & 16 \\ 
-
-for (i in 1:length(2007:2016)) {
-  l.is.listed[[i]] %>% print
-  colnames(vecm.myl.gir[[i]]) %>% print
-  colnames(l.matrix.all[[i]]) %>% print
-  colnames(d.matrix.all[[i]]) %>% print
-  rownames(raw.wind[[i]])  %>% print
-  print("#######################")
-}

@@ -38,13 +38,15 @@ save(l.matrix,d.matrix, file = "data/Rdata/latex_interbank_wind.Rdata")
 # wind: proportion loan and deposit interbank network for 10 banks
 #################################################################
 load(file = "data/Rdata/latex_interbank_wind.Rdata")
+load(file = "data/Rdata/latex_group.stockprice.Rdata")
 bank10.abbr <- c("SOBC", "SOICBC", "SOCCB", "SOBOC", "JEPF", "JEHB", "JECM", "JECI", "JECITIC", "URBJ")
-group.wind <- group.stockprice[bank10.abbr,"Cwind"]
+group.wind <- group.stockprice[bank10.abbr, "Cwind"]
 
 p.l.matrix <- lapply(l.matrix, FUN = function(x){
   locate <- match(group.wind, colnames(x))
   x <- x[locate,locate]
   x[is.na(x)] <- 0
+  x[is.infinite(x)] <- 0
   colnames(x) <- bank10.abbr;rownames(x) <- bank10.abbr;
   return(x)})
 
@@ -52,6 +54,7 @@ p.d.matrix <- lapply(d.matrix, FUN = function(x){
   locate <- match(group.wind, colnames(x))
   x <- x[locate,locate]
   x[is.na(x)] <- 0
+  x[is.infinite(x)] <- 0
   colnames(x) <- bank10.abbr;rownames(x) <- bank10.abbr;
   return(x)})
 
@@ -75,10 +78,14 @@ if(TRUE){
 if(TRUE){
   pl.loan.network <- lapply(p.l.matrix, FUN = function(x){
     y <- x/rowSums(x)
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})
   
   pl.deposit.network <- lapply(p.d.matrix, FUN = function(x){
     y <- x/rowSums(x)
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})#log(deposit.network %>% unlist,10)
   
   pl.compound.network <- list()
@@ -87,6 +94,8 @@ if(TRUE){
   }
   pl.compound.network <- lapply(pl.compound.network, FUN = function(x){
     y <- x/rowSums(x)
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})
 }
 
@@ -94,10 +103,14 @@ if(TRUE){
 if(TRUE){
   pb.loan.network <- lapply(p.l.matrix, FUN = function(x){
     y <- x/colSums(x)
-    return(y)})
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
+    return(y)})###
   
   pb.deposit.network <- lapply(p.d.matrix, FUN = function(x){
     y <- x/colSums(x)
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})#log(deposit.network %>% unlist,10)
   
   pb.compound.network <- list()
@@ -106,6 +119,8 @@ if(TRUE){
   }
   pb.compound.network <- lapply(pb.compound.network, FUN = function(x){
     y <- x/colSums(x)
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})
 }
 
@@ -115,12 +130,16 @@ if(TRUE){
     y <- x/colSums(x)
     locate <- match(group.wind, colnames(x))
     y <- y[locate, locate]
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})
   
   ab.deposit.network <- lapply(d.matrix, FUN = function(x){
     y <- x/colSums(x)
     locate <- match(group.wind, colnames(x))
     y <- y[locate, locate]
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})#log(deposit.network %>% unlist,10)
   
   ab.compound.network <- list()
@@ -131,21 +150,27 @@ if(TRUE){
     y <- x/colSums(x)
     locate <- match(group.wind, colnames(x))
     y <- y[locate, locate]
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})
 }
 
 # divided the network by sum of lending of all banks
 if(TRUE){
   al.loan.network <- lapply(l.matrix, FUN = function(x){
-    y <- x/rowSums(x)
+    y <- x/colSums(x)
     locate <- match(group.wind, colnames(x))
     y <- y[locate, locate]
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})
   
   al.deposit.network <- lapply(d.matrix, FUN = function(x){
-    y <- x/rowSums(x)
+    y <- x/colSums(x)
     locate <- match(group.wind, colnames(x))
     y <- y[locate, locate]
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})#log(deposit.network %>% unlist,10)
   
   al.compound.network <- list()
@@ -153,9 +178,11 @@ if(TRUE){
     al.compound.network[[i]] <-l.matrix[[i]] + d.matrix[[i]]
   }
   al.compound.network <- lapply(al.compound.network, FUN = function(x){
-    y <- x/rowSums(x)
+    y <- x/colSums(x)
     locate <- match(group.wind, colnames(x))
     y <- y[locate, locate]
+    y[is.na(y)] <- 0
+    y[is.infinite(y)] <- 0
     return(y)})
 }
 

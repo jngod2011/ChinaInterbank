@@ -67,6 +67,54 @@ for(i in 1:length.fnlist){
 }
 names(shibor)[1] <- "Date"
 shibor$Date<- substr(shibor$Date, 1, 10)
+## term spread
+term.spread <- (shibor$`1Y`-shibor$`9M`+
+               shibor$`1Y`-shibor$`6M`+
+               shibor$`1Y`-shibor$`3M`+
+               shibor$`1Y`-shibor$`1M`+
+               shibor$`1Y`-shibor$`2W`+
+               shibor$`1Y`-shibor$`1W`+
+               shibor$`1Y`-shibor$`O/N`+
+               
+               shibor$`9M`-shibor$`6M`+
+               shibor$`9M`-shibor$`3M`+
+               shibor$`9M`-shibor$`1M`+
+               shibor$`9M`-shibor$`2W`+
+               shibor$`9M`-shibor$`1W`+
+               shibor$`9M`-shibor$`O/N`+
+               
+               shibor$`6M`-shibor$`3M`+
+               shibor$`6M`-shibor$`1M`+
+               shibor$`6M`-shibor$`2W`+
+               shibor$`6M`-shibor$`1W`+
+               shibor$`6M`-shibor$`O/N`+
+               
+               shibor$`3M`-shibor$`1M`+
+               shibor$`3M`-shibor$`2W`+
+               shibor$`3M`-shibor$`1W`+
+               shibor$`3M`-shibor$`O/N`+
+               
+               shibor$`1M`-shibor$`2W`+
+               shibor$`1M`-shibor$`1W`+
+               shibor$`1M`-shibor$`O/N`+
+               
+               shibor$`2W`-shibor$`1W`+
+               shibor$`2W`-shibor$`O/N`+
+               
+               shibor$`1W`-shibor$`O/N`)/28
+
+term.spread <- (7*shibor$`1Y` + 5*shibor$`9M` + 3*shibor$`6M` + shibor$`3M` - shibor$`1M` - 3*shibor$`2W` - 5*shibor$`1W`- 7*shibor$`O/N`)/28
+
+data <- cbind(shibor[,-1], term.spread)
+names(data)[ncol(data)] <- "Term Spread"
+dy.data <- xts(data, as.Date(shibor$Date, format='%Y-%m-%d'))
+dy.main <- "Shanghai Interbank Offered Rate from 2006 to 2018"
+color <- c(colorRampPalette(c("red", "white"))(5)[-5],colorRampPalette(c("blue", "white"))(5)[-5], "black")
+dygraph.interbank(dy.data, dy.main, color) %>% 
+  dyAxis("y", label = "Shanghai Interbank Offered Rate", independentTicks = T) %>%
+  dyAxis("y2", label = "Term Spread" ,independentTicks = TRUE, drawGrid = F) %>%
+  dySeries("Term Spread", label = "Term Spread", color = "black", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
+
 
 ## shibor: is shorter rae higher than the longer one?
 is.higher <- shibor
@@ -96,12 +144,13 @@ dygraph.interbank(dy.data, dy.main, color) %>%
   dyAxis("y", label = "Shanghai Interbank Offered Rate", independentTicks = T) %>%
   dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
   dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
+
 #################################################################
 # summary shibor
 #################################################################
 su.shibor <- shibor[,-1]
 names(su.shibor) <- c("O/N","W1","W2","M1","M3","M6","M9","Y1")
-summary.shibor <- sapply(su.shibor %>% na.omit, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
+summary.shibor <- sapply(su.shibor %>% na.omit, each(mean, sd, min, median, max, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
 summary.shibor <- summary.shibor %>% round(2) %>% t
 names(summary.shibor) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
 write.xlsx(summary.shibor, file = "latex/report/excel/summary_shibor.xlsx", row.names = TRUE)
@@ -187,8 +236,8 @@ for(i in 1:length.fnlist){
   temp <- subset(temp, select =  -`应收利息(万元)`)
   #temp <- subset(temp, select =  -`基本每股收益(万/股)`)
   #temp <- subset(temp, select =  -`稀释每股收益(元/股)`)
-  temp$`基本每股收益(万/股)` <- temp$`基本每股收益(万/股)` * (10^5)/10000*(12^10)#scale#
-  temp$`稀释每股收益(元/股)` <- temp$`稀释每股收益(元/股)` * (10^5)/10000*(12^10)#scale#
+  temp$`基本每股收益(万/股)` <- temp$`基本每股收益(万/股)` * (10^4)/10000*(12^10)#scale#
+  temp$`稀释每股收益(元/股)` <- temp$`稀释每股收益(元/股)` * 10000*(12^10)#scale#
   #temp$`应付利息(万元)` <- temp$`应付利息(万元)` /(10^6)/10000*(12^10)#scale#
   #temp$`应收利息(万元)` <- temp$`应收利息(万元)` /(10^6)/10000*(12^10)#scale#
   temp.title <- temp[,c("公司名称","数据来源","报告期")]
@@ -284,7 +333,7 @@ load(file = "data/Rdata/latex_raw.wind.Rdata")
 selected.wind <- c("asst","lblt","lnd","brr","dlnd","dbrr","clnd","cbrr","nprf", "grp")
 wind <- wind[,selected.wind]
 
-summary.wind <- sapply(wind %>% na.omit, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
+summary.wind <- sapply(wind %>% na.omit, each(mean, sd, min, median, max, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
 summary.wind <- summary.wind %>% round(2) %>% t
 names(summary.wind) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
 write.xlsx(summary.wind, file = "latex/report/excel/summary_wind.xlsx", row.names = TRUE)
@@ -326,7 +375,7 @@ print(correlation.table,
 # g.sp data description
 #################################################################
 names(g.sp) <- bank10.abbr
-summary.g.sp <- sapply(g.sp * 100, each(min, max, median, mean, sd, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)#scale#
+summary.g.sp <- sapply(g.sp * 100, each(mean, sd, min, median, max, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)#scale#
 summary.g.sp <- summary.g.sp %>% round(2) %>% t
 names(summary.g.sp) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
 write.xlsx(summary.g.sp, file = "latex/report/excel/summary_g_sp.xlsx", row.names = TRUE)
@@ -907,7 +956,7 @@ sp.all <- xts(raw.stockprice[,-1], as.Date(raw.stockprice$Date, format='%Y-%m-%d
 
 Date.year <- paste0(c(1991:2018),"-01-01")
 l.is.listed <- list()
-l.is.listed0 <- list()
+#l.is.listed0 <- list()
 for (i in 1:(length(Date.year)-1)) {
   temp <- sp.all[paste0(Date.year[i],"/",Date.year[i+1])]
   is.listed <- apply(temp, MARGIN = 2, FUN = function(x){
@@ -916,31 +965,25 @@ for (i in 1:(length(Date.year)-1)) {
   })
   
   l.is.listed[[i]] <- names(is.listed[is.listed==0])
-  l.is.listed0[[i]] <- names(is.listed[is.listed<0.5])
+  #l.is.listed0[[i]] <- names(is.listed[is.listed<0.5])
   #print(paste0(c("###########"),c(1991:2018)[i],c("###########")))
   #print(test)
 }
 
 names(l.is.listed) <- paste0("year",c(1991:2017))
-lapply(l.is.listed0,length) %>% unlist-
-  lapply(l.is.listed,length) %>% unlist
-
+#lapply(l.is.listed0,length) %>% unlist-lapply(l.is.listed,length) %>% unlist
 
 l.sp.all <- list()
 l.sp.all.full <- list()
 for (i in 1:length(c(1991:2017))) {
-  l.sp.all.full[[i]] <- temp[,l.is.listed[[i]]] %>% na.omit
+  l.sp.all.full[[i]] <- sp.all[,l.is.listed[[i]]] %>% na.omit
   temp <- sp.all[paste0(Date.year[i],"/",Date.year[i+1])]
   l.sp.all[[i]] <- temp[,l.is.listed[[i]]] %>% na.omit
-  print(c(1991:2017)[[i]])
-  print(dim(l.sp.all[[i]]))
+  #print(c(1991:2017)[[i]])
+  #print(dim(l.sp.all[[i]]))
 }
 names(l.sp.all) <- paste0("year",c(1991:2017))
-
-l.sp.all <- l.sp.all[-c(1:length(1991:1999))]
-l.sp.all.full <- l.sp.all.full[-c(1:length(1991:1999))]
-l.is.listed <- l.is.listed[-c(1:length(1991:1999))]
-names(l.sp.all)
+names(l.sp.all.full) <- paste0("year",c(1991:2017))
 
 save(l.is.listed,l.sp.all,l.sp.all.full,file = "data/Rdata/latex_sp.all.Rdata")
 #################################################################
@@ -949,11 +992,12 @@ save(l.is.listed,l.sp.all,l.sp.all.full,file = "data/Rdata/latex_sp.all.Rdata")
 load(file = "data/Rdata/latex_group.stockprice.Rdata")
 load(file = "data/Rdata/latex_sp.all.Rdata")
 
-l.is.listed <- l.is.listed[-c(18)]#"year2017"
+
+l.is.listed <- l.is.listed[-c(length(l.is.listed))]#"year2017"
 l.is.listed <- l.is.listed[-c(1:length(2000:2006))] 
 temp.list <- l.is.listed %>% unlist %>% unique
-temp.Cwind <- group.stockprice[match(temp.list, group.stockprice$Abbr),"Cwind"]
-temp.Abbr <- group.stockprice[match(temp.list, group.stockprice$Abbr),"Abbr"]
+temp.Cwind <- group.stockprice[temp.list,"Cwind"]
+temp.Abbr <- temp.list
 
 wind.name <- read_excel(path = "data/windname.xlsx",sheet = "name",
                         skip = 0,
@@ -962,7 +1006,6 @@ wind.name <- read_excel(path = "data/windname.xlsx",sheet = "name",
 
 fnlist.wind <- dir("data/wind")
 raw.wind <- list()
-raw.wind.full <- list()
 length.fnlist <- length(fnlist.wind)
 for(i in 1:length.fnlist){
   temp <- read_excel(path = paste0("data/wind/",fnlist.wind[i]),
@@ -978,25 +1021,24 @@ for(i in 1:length.fnlist){
   temp$`客户贷款及垫款净增加额(万元)`[is.na(temp$`客户贷款及垫款净增加额(万元)`)] <- 0
   temp <- subset(temp, select =  -`应付利息(万元)`)
   temp <- subset(temp, select =  -`应收利息(万元)`)
-  temp$`基本每股收益(万/股)` <- temp$`基本每股收益(万/股)` * (10^5)/10000*(12^10)#scale#
-  temp$`稀释每股收益(元/股)` <- temp$`稀释每股收益(元/股)` * (10^5)/10000*(12^10)#scale#
+  temp$`基本每股收益(万/股)` <- temp$`基本每股收益(万/股)` * (10^4)/10000*(12^10)#scale#
+  temp$`稀释每股收益(元/股)` <- temp$`稀释每股收益(元/股)` * 10000*(12^10)#scale#
   temp.title <- temp[,c("公司名称","数据来源","报告期")]
   temp <- subset(temp, select =  -`报告期`)
   temp <- subset(temp, select =  -`公司名称`)
   temp <- subset(temp, select =  -`数据来源`)
-
   
   onames <- names(temp)
   names(temp) <- wind.name[,2][match(onames,wind.name[,1])]
   temp <- temp*10000/(12^10)#scale#
-
+  
   locate <- sapply(temp.Cwind, grepl, temp.title$公司名称)
   locate <- apply(locate, 2, which)
   locate <- locate %>% unlist
   temp <- temp[locate,]
   rownames(temp) <- temp.Abbr
   raw.wind[[i]] <- temp
-
+  
 }
 raw.wind <- F.fill.up.NAs(raw.wind)
 raw.wind %>% unlist %>%is.na %>% sum
@@ -1018,13 +1060,12 @@ save(raw.wind, file = "data/Rdata/latex_raw.wind_all.Rdata")
 #################################################################
 load(file = "data/Rdata/latex_sp.all.Rdata")#
 l.is.listed <- l.is.listed[-length(l.is.listed)]
-l.is.listed <- l.is.listed[-c(1:length(2000:2006))]
+l.is.listed <- l.is.listed[-c(1:length(1991:2006))]
 
 l.sp.all <- l.sp.all[-length(l.sp.all)]
-l.sp.all <- l.sp.all[-c(1:length(2000:2006))]
-
+l.sp.all <- l.sp.all[-c(1:length(1991:2006))]
 l.sp.all.full <- l.sp.all.full[-length(l.sp.all.full)]
-l.sp.all.full <- l.sp.all.full[-c(1:length(2000:2006))]
+l.sp.all.full <- l.sp.all.full[-c(1:length(1991:2006))]
 
 var.myl.gir <- list()
 vecm.myl.gir <- list()
@@ -1047,9 +1088,8 @@ y.period <- c(
 # the sample in 2018 is too small
 for (t in 1:(length(y.period)-1)) {
   temp.abbr <- l.is.listed[[t]]
-  temp.data <- l.sp.all.full[[t]]
-  n.bank <- ncol(temp.data)
-  try.error <- try(vecm.tsDyn <- VECM(data = temp.data, lag=2, estim="ML"),silent = TRUE)#Type of estimator: 2OLS for the two-step approach or ML for Johansen MLE
+  n.bank <- length(temp.abbr)
+  try.error <- try(vecm.tsDyn <- VECM(data = l.sp.all.full[[t]], lag=2, estim="ML"),silent = TRUE)#Type of estimator: 2OLS for the two-step approach or ML for Johansen MLE
   rank.test <- vecm.tsDyn
   rank.eigen <- rank.test(vecm.tsDyn, cval = 0.01, type = "eigen")$r
   rank.trace <- rank.test(vecm.tsDyn, cval = 0.01, type = "trace")$r
@@ -1073,11 +1113,7 @@ for (t in 1:(length(y.period)-1)) {
   vecm.myl.gir[[t]] <- temp
   colnames(vecm.myl.gir[[t]]) <- temp.abbr;rownames(vecm.myl.gir[[t]]) <- temp.abbr
   
-  temp.data <- l.sp.all[[t]]
-  temp.date <- index(l.sp.all[[t]])[-1]
-  temp.data <- as.data.frame(apply(X = temp.data, MARGIN = 2, FUN = log_GrowthRate))
-  temp.data <- xts(temp.data, as.Date(temp.date, format='%Y-%m-%d'))
-  
+  temp.data <- l.sp.all[[t]]#temp.date <- index(l.sp.all[[t]])[-1]#temp.data <- as.data.frame(apply(X = temp.data, MARGIN = 2, FUN = log_GrowthRate))#temp.data <- xts(temp.data, as.Date(temp.date, format='%Y-%m-%d'))
   var.gir0 <- dy.VAR.GIR(data = temp.data, n.ahead = 0, span = "yearly")[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow = n.bank,ncol = n.bank)
   var.gir1 <- dy.VAR.GIR(data = temp.data, n.ahead = 1, span = "yearly")[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow = n.bank,ncol = n.bank)
   var.gir2 <- dy.VAR.GIR(data = temp.data, n.ahead = 2, span = "yearly")[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow = n.bank,ncol = n.bank)
@@ -1094,11 +1130,258 @@ for (t in 1:(length(y.period)-1)) {
   temp <- matrix(temp %>% unlist,n.bank,n.bank) #%>% t
   var.myl.gir[[t]] <- temp
   colnames(var.myl.gir[[t]]) <- temp.abbr;rownames(var.myl.gir[[t]] ) <- temp.abbr
-  
 }
 
 save(y.period,
      vecm.myl.gir,
      var.myl.gir,
      file = "data/Rdata/latex_yearly_networky_all.Rdata"
+)
+#################################################################
+# Yearly10_fd_gir.R
+#################################################################
+load(file = "data/Rdata/latex_ForestData.Rdata")
+data <- xts(data[,-1], as.Date(data[,1], format='%Y-%m-%d'))
+Date <- index(data) %>% as.character
+bank10.abbr <- c("SOBC", "SOICBC", "SOCCB", "SOBOC", "JEPF", "JEHB", "JECM", "JECI", "JECITIC", "URBJ")
+
+var.myl.gir <- list()
+vecm.myl.gir <- list()
+network.y <- list()
+y.period <- c(
+  "2008-12-31",
+  "2009-12-31",
+  "2010-12-31",
+  "2011-12-31",
+  "2012-12-31",
+  "2013-12-31",
+  "2014-12-31",
+  "2015-12-31",
+  "2016-12-31"
+  #,#"2017-12-31"
+)
+
+type.list <- c("ON","W1","W2","M1","M3","M6","M9","Y1")
+for (type in 1:length(type.list)) {
+  temp.abbr <- bank10.abbr
+  n.bank <- 10
+  all.data <- data[, paste0(bank10.abbr,".",type.list[type])]
+  try.error <- try(vecm.tsDyn <- VECM(data = all.data, lag=2, estim="ML"),silent = TRUE)#Type of estimator: 2OLS for the two-step approach or ML for Johansen MLE
+  rank.test <- vecm.tsDyn
+  rank.eigen <- rank.test(vecm.tsDyn, cval = 0.01, type = "eigen")$r
+  rank.trace <- rank.test(vecm.tsDyn, cval = 0.01, type = "trace")$r
+  rank <- floor((rank.eigen + rank.trace)/2)#4
+  print(paste0("rank is ", rank," for ",type.list[type]))
+  }
+
+
+for (type in 1:length(type.list)) {
+  temp.abbr <- bank10.abbr
+  n.bank <- 10
+  all.data <- data[, paste0(bank10.abbr,".",type.list[type])]
+  try.error <- try(vecm.tsDyn <- VECM(data = all.data, lag=2, estim="ML"),silent = TRUE)#Type of estimator: 2OLS for the two-step approach or ML for Johansen MLE
+  rank.test <- vecm.tsDyn
+  rank.eigen <- rank.test(vecm.tsDyn, cval = 0.01, type = "eigen")$r
+  rank.trace <- rank.test(vecm.tsDyn, cval = 0.01, type = "trace")$r
+  rank <- floor((rank.eigen + rank.trace)/2)#4
+  if(rank==10){print(paste0("rank is 10 for ",type.list[type]))}
+  for (t in 1:(length(y.period)-1)) {
+    temp.data <- all.data[paste0(y.period[t],"/",y.period[t+1])]
+    if(0){
+      vecm.gir0 <- dy.VECM.GIR(data = temp.data, n.ahead = 0, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir0 <- matrix(data = unlist(vecm.gir0),nrow = n.bank, ncol = n.bank)
+      vecm.gir1 <- dy.VECM.GIR(data = temp.data, n.ahead = 1, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir1 <- matrix(data = unlist(vecm.gir1),nrow = n.bank, ncol = n.bank)
+      vecm.gir2 <- dy.VECM.GIR(data = temp.data, n.ahead = 2, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir2 <- matrix(data = unlist(vecm.gir2),nrow = n.bank, ncol = n.bank)
+      vecm.gir3 <- dy.VECM.GIR(data = temp.data, n.ahead = 3, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir3 <- matrix(data = unlist(vecm.gir3),nrow = n.bank, ncol = n.bank)
+      vecm.gir4 <- dy.VECM.GIR(data = temp.data, n.ahead = 4, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir4 <- matrix(data = unlist(vecm.gir4),nrow = n.bank, ncol = n.bank)
+      vecm.gir5 <- dy.VECM.GIR(data = temp.data, n.ahead = 5, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir5 <- matrix(data = unlist(vecm.gir5),nrow = n.bank, ncol = n.bank)
+      GIR <- array(c(vecm.gir0,
+                     vecm.gir1,
+                     vecm.gir2,
+                     vecm.gir3,
+                     vecm.gir4,
+                     vecm.gir5), dim = c(n.bank,n.bank,6))
+      temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+      temp <- matrix(temp %>% unlist,n.bank,n.bank) #%>% t
+      vecm.myl.gir[[t]] <- temp
+      colnames(vecm.myl.gir[[t]]) <- temp.abbr;rownames(vecm.myl.gir[[t]]) <- temp.abbr
+    }
+    temp.data <- all.data[paste0(y.period[t],"/",y.period[t+1])]
+    temp.date <- index(temp.data)
+    temp.date <-  diff(log(temp.data), lag=1)[-1,]
+    
+    var.gir0 <- dy.VAR.GIR(data = temp.data, n.ahead = 0, span = "yearly")[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow = n.bank,ncol = n.bank)
+    var.gir1 <- dy.VAR.GIR(data = temp.data, n.ahead = 1, span = "yearly")[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow = n.bank,ncol = n.bank)
+    var.gir2 <- dy.VAR.GIR(data = temp.data, n.ahead = 2, span = "yearly")[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow = n.bank,ncol = n.bank)
+    var.gir3 <- dy.VAR.GIR(data = temp.data, n.ahead = 3, span = "yearly")[[1]];var.gir3 <- matrix(data = unlist(var.gir3),nrow = n.bank,ncol = n.bank)
+    var.gir4 <- dy.VAR.GIR(data = temp.data, n.ahead = 4, span = "yearly")[[1]];var.gir4 <- matrix(data = unlist(var.gir4),nrow = n.bank,ncol = n.bank)
+    var.gir5 <- dy.VAR.GIR(data = temp.data, n.ahead = 5, span = "yearly")[[1]];var.gir5 <- matrix(data = unlist(var.gir5),nrow = n.bank,ncol = n.bank)
+    GIR <- array(c(var.gir0,
+                   var.gir1,
+                   var.gir2,
+                   var.gir3,
+                   var.gir4,
+                   var.gir5), dim = c(n.bank,n.bank,6))
+    temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+    temp <- matrix(temp %>% unlist,n.bank,n.bank) #%>% t
+    var.myl.gir[[t]] <- temp
+    colnames(var.myl.gir[[t]]) <- temp.abbr;rownames(var.myl.gir[[t]] ) <- temp.abbr
+  }
+  save(y.period,
+       var.myl.gir,
+       file = paste0("data/Rdata/latex_yearly_networky_shiborbid_gir_",type.list[type],".Rdata")
+  )
+}
+
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_ON.Rdata")
+var.myl.gir.ON <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_W1.Rdata")
+var.myl.gir.W1 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_W2.Rdata")
+var.myl.gir.W2 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_M1.Rdata")
+var.myl.gir.M1 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_M3.Rdata")
+var.myl.gir.M3 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_M6.Rdata")
+var.myl.gir.M6 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_M9.Rdata")
+var.myl.gir.M9 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_Y1.Rdata")
+var.myl.gir.Y1 <- var.myl.gir
+
+var.myl.gir.short <- list()
+for(i in 1:length(var.myl.gir.ON)){
+  var.myl.gir.short[[i]] <- (var.myl.gir.ON[[i]] + 
+    var.myl.gir.W1[[i]] + 
+    var.myl.gir.W2[[i]] + 
+    var.myl.gir.M1[[i]])/4
+}
+
+var.myl.gir.long <- list()
+for(i in 1:length(var.myl.gir.ON)){
+  var.myl.gir.long[[i]] <- (var.myl.gir.M3[[i]] + 
+    var.myl.gir.M6[[i]] + 
+    var.myl.gir.M9[[i]] + 
+    var.myl.gir.Y1[[i]])/4
+}
+
+var.myl.gir.all <- list()
+for(i in 1:length(var.myl.gir.ON)){
+  var.myl.gir.all[[i]] <- (var.myl.gir.short[[i]]+var.myl.gir.long[[i]])/2
+}
+
+save(y.period,
+     var.myl.gir.ON,
+     var.myl.gir.W1,
+     var.myl.gir.W2,
+     var.myl.gir.M1,
+     var.myl.gir.M3,
+     var.myl.gir.M6,
+     var.myl.gir.M9,
+     var.myl.gir.Y1,
+     var.myl.gir.short,
+     var.myl.gir.all,
+     var.myl.gir.long,
+     file = paste0("data/Rdata/latex_yearly_networky_shiborbid_gir.Rdata")
+)
+
+#################################################################
+# Yearly10_fd_fevd.R
+#################################################################
+load(file = "data/Rdata/latex_ForestData.Rdata")
+data <- xts(data[,-1], as.Date(data[,1], format='%Y-%m-%d'))
+Date <- index(data) %>% as.character
+bank10.abbr <- c("SOBC", "SOICBC", "SOCCB", "SOBOC", "JEPF", "JEHB", "JECM", "JECI", "JECITIC", "URBJ")
+
+var.myl.fevd <- list()
+vecm.myl.gir <- list()
+network.y <- list()
+y.period <- c(
+  "2008-12-31",
+  "2009-12-31",
+  "2010-12-31",
+  "2011-12-31",
+  "2012-12-31",
+  "2013-12-31",
+  "2014-12-31",
+  "2015-12-31",
+  "2016-12-31"
+  #,#"2017-12-31"
+)
+
+type.list <- c("ON","W1","W2","M1","M3","M6","M9","Y1")
+for (type in 1:length(type.list)) {
+  temp.abbr <- bank10.abbr
+  n.bank <- 10
+  all.data <- data[, paste0(bank10.abbr,".",type.list[type])]
+  for (t in 1:(length(y.period)-1)) {
+    temp.data <- all.data[paste0(y.period[t],"/",y.period[t+1])]
+    temp.date <- index(temp.data)
+    temp.date <-  diff(log(temp.data), lag=1)[-1,]
+    
+    var.gir1 <- dy.VAR.FEVD(data = temp.data, n.ahead = 1, span = "yearly")[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow = n.bank,ncol = n.bank)
+    var.gir2 <- dy.VAR.FEVD(data = temp.data, n.ahead = 2, span = "yearly")[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow = n.bank,ncol = n.bank)
+    var.gir3 <- dy.VAR.FEVD(data = temp.data, n.ahead = 3, span = "yearly")[[1]];var.gir3 <- matrix(data = unlist(var.gir3),nrow = n.bank,ncol = n.bank)
+    var.gir4 <- dy.VAR.FEVD(data = temp.data, n.ahead = 4, span = "yearly")[[1]];var.gir4 <- matrix(data = unlist(var.gir4),nrow = n.bank,ncol = n.bank)
+    var.gir5 <- dy.VAR.FEVD(data = temp.data, n.ahead = 5, span = "yearly")[[1]];var.gir5 <- matrix(data = unlist(var.gir5),nrow = n.bank,ncol = n.bank)
+    var.myl.fevd[[t]] <- (var.gir1 + var.gir2 + var.gir3 + var.gir4 + var.gir5)/5
+    colnames(var.myl.fevd[[t]]) <- temp.abbr;rownames(var.myl.fevd[[t]] ) <- temp.abbr
+  }
+  save(y.period,
+       var.myl.fevd,
+       file = paste0("data/Rdata/latex_yearly_networky_shiborbid_gir_",type.list[type],".Rdata")
+  )
+}
+
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_ON.Rdata")
+var.myl.fevd.ON <- var.myl.fevd
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_W1.Rdata")
+var.myl.fevd.W1 <- var.myl.fevd
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_W2.Rdata")
+var.myl.fevd.W2 <- var.myl.fevd
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_M1.Rdata")
+var.myl.fevd.M1 <- var.myl.fevd
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_M3.Rdata")
+var.myl.fevd.M3 <- var.myl.fevd
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_M6.Rdata")
+var.myl.fevd.M6 <- var.myl.fevd
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_M9.Rdata")
+var.myl.fevd.M9 <- var.myl.fevd
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir_Y1.Rdata")
+var.myl.fevd.Y1 <- var.myl.fevd
+
+var.myl.fevd.short <- list()
+for(i in 1:length(var.myl.fevd.ON)){
+  var.myl.fevd.short[[i]] <- (var.myl.fevd.ON[[i]] + 
+                                var.myl.fevd.W1[[i]] + 
+                                var.myl.fevd.W2[[i]] + 
+                                var.myl.fevd.M1[[i]])/4
+}
+
+var.myl.fevd.long <- list()
+for(i in 1:length(var.myl.fevd.ON)){
+  var.myl.fevd.long[[i]] <- (var.myl.fevd.M3[[i]] + 
+                               var.myl.fevd.M6[[i]] + 
+                               var.myl.fevd.M9[[i]] + 
+                               var.myl.fevd.Y1[[i]])/4
+}
+
+var.myl.fevd.all <- list()
+for(i in 1:length(var.myl.fevd.ON)){
+  var.myl.fevd.all[[i]] <- (var.myl.fevd.short[[i]]+var.myl.fevd.long[[i]])/2
+}
+
+save(y.period,
+     var.myl.fevd.ON,
+     var.myl.fevd.W1,
+     var.myl.fevd.W2,
+     var.myl.fevd.M1,
+     var.myl.fevd.M3,
+     var.myl.fevd.M6,
+     var.myl.fevd.M9,
+     var.myl.fevd.Y1,
+     var.myl.fevd.short,
+     var.myl.fevd.all,
+     var.myl.fevd.long,
+     file = paste0("data/Rdata/latex_yearly_networky_shiborbid_gir.Rdata")
 )

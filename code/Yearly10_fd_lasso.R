@@ -2,11 +2,11 @@
 timestart <- Sys.time()
 #####################################################################
 ID <- c("1")
-network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#
+network.y.type <- "short"#"VECM.GIR"#VAR.GIR#
 interbank.type <- "r"#r#pl#pb#ab#al
 inclusion.edgecov <- c("loan","deposit")#loan#deposit#compound
 inclusion.nodecov <- NULL
-inclusion.both <- c("asst")#NULL#c("asst")#,"ad"
+inclusion.both <- c("asst","cbrr")#NULL#c("asst")#,"ad"
 library(knitr)
 network.x <- NULL#combine_words(inclusion.edgecov, and = "",sep = "-",before ="",after = "")
 inclusion.out <- NULL##NULL#"dlnd"#,"dfa""dlnd",

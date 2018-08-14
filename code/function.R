@@ -221,8 +221,8 @@ fevd_generalised <- function(model, n.ahead, normalize=TRUE) {
 #################################################################
 log_GrowthRate <- function(x)
 {
-  y <- c()
   y <- log(x[-1])-log(x[-length(x)])
+  return(y)
 }
 #################################################################
 #dy.VAR.FEVD
@@ -1212,6 +1212,24 @@ dyCoefErgm.yearly <- function(data, set,
         diag(temp.loan) <- 0;temp.loan[is.na(temp.loan)] <- 0
         temp.loan <- as.matrix(temp.loan,nnode,nnode)
         if(!is.na(match("loan",trans))){temp.loan <- t(temp.loan)}
+      }
+      if(!is.na(match("loan.so",inclusion.edgecov))){
+        temp.loan.so <- loan.network.so[[i]]# %>% log  ;#temp.loan <- apply(temp.loan, c(1,2), round);
+        diag(temp.loan.so) <- 0;temp.loan.so[is.na(temp.loan.so)] <- 0
+        temp.loan.so <- as.matrix(temp.loan.so,nnode,nnode)
+        if(!is.na(match("loan.so",trans))){temp.loan.so <- t(temp.loan.so)}
+      }
+      if(!is.na(match("loan.je",inclusion.edgecov))){
+        temp.loan.je <- loan.network.je[[i]]# %>% log  ;#temp.loan <- apply(temp.loan, c(1,2), round);
+        diag(temp.loan.je) <- 0;temp.loan.je[is.na(temp.loan.je)] <- 0
+        temp.loan.je <- as.matrix(temp.loan.je,nnode,nnode)
+        if(!is.na(match("loan.je",trans))){temp.loan.je <- t(temp.loan.je)}
+      }
+      if(!is.na(match("loan.ot",inclusion.edgecov))){
+        temp.loan.ot <- loan.network.ot[[i]]# %>% log  ;#temp.loan <- apply(temp.loan, c(1,2), round);
+        diag(temp.loan.ot) <- 0;temp.loan.ot[is.na(temp.loan.ot)] <- 0
+        temp.loan.ot <- as.matrix(temp.loan.ot,nnode,nnode)
+        if(!is.na(match("loan.ot",trans))){temp.loan.ot <- t(temp.loan.ot)}
       }
       if(!is.na(match("deposit",inclusion.edgecov))){
         temp.deposit <- deposit.network[[i]]# %>% log  ;#temp.loan <- apply(temp.loan, c(1,2), round);

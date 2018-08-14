@@ -2,7 +2,7 @@
 timestart <- Sys.time()
 #####################################################################
 ID <- c("1")
-network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#
+network.y.type <- "all_VARfevd"#VECM.GIR"#"VECM.GIR"#VAR.GIR#
 interbank.type <- "r"#r#pl#pb#ab#al
 inclusion.edgecov <- c("loan","deposit")#loan#deposit#compound
 inclusion.nodecov <- NULL
@@ -290,6 +290,42 @@ if(network.y.type=="M9"){
 }
 if(network.y.type=="Y1"){
   network.y <- aenet.myl.Y1
+}
+
+load(file = "data/Rdata/latex_yearly_networky_shiborbid_gir.Rdata")
+
+if(network.y.type=="ON_VARfevd"){
+  network.y <- var.myl.fevd.ON
+}
+if(network.y.type=="W1_VARfevd"){
+  network.y <- var.myl.fevd.W1
+}
+if(network.y.type=="W2_VARfevd"){
+  network.y <- var.myl.fevd.W2
+}
+if(network.y.type=="M1_VARfevd"){
+  network.y <- var.myl.fevd.M1
+}
+if(network.y.type=="M3_VARfevd"){
+  network.y <- var.myl.fevd.M3
+}
+if(network.y.type=="M6_VARfevd"){
+  network.y <- var.myl.fevd.M6
+}
+if(network.y.type=="M9_VARfevd"){
+  network.y <- var.myl.fevd.M9
+}
+if(network.y.type=="Y1_VARfevd"){
+  network.y <- var.myl.fevd.Y1
+}
+if(network.y.type=="short_VARfevd"){
+  network.y <- var.myl.fevd.short
+}
+if(network.y.type=="long_VARfevd"){
+  network.y <- var.myl.fevd.long
+}
+if(network.y.type=="all_VARfevd"){
+  network.y <- var.myl.fevd.all
 }
 #################################################################
 # basic setting
