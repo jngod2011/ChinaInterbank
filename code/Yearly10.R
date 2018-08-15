@@ -1,12 +1,12 @@
 #time###########################################################################################
 timestart <- Sys.time()
 #####################################################################
-ID <- c("1")
+ID <- c("11")
 network.y.type <- "VECM.GIR"#"VECM.GIR"#VAR.GIR#
 interbank.type <- "r"#r#pl#pb#ab#al
-inclusion.edgecov <- c("loan","deposit")#loan#deposit#compound
+inclusion.edgecov <- c("deposit")#loan#deposit#compound#"loan.so","loan.je","loan.ot"
 inclusion.nodecov <- NULL
-inclusion.both <- c("asst")#NULL#c("asst")#,"ad"
+inclusion.both <- c("asst","cbrr")
 library(knitr)
 network.x <- NULL#combine_words(inclusion.edgecov, and = "",sep = "-",before ="",after = "")
 inclusion.out <- NULL##NULL#"dlnd"#,"dfa""dlnd",
@@ -94,10 +94,37 @@ n.all.bid.M9 <- paste0(bank10.abbr,".M9")
 n.all.bid.Y1 <- paste0(bank10.abbr,".Y1")
 #loan###########################################################################################
 load(file = "data/Rdata/latex_wind_rpa.Rdata")
+load(file = "data/Rdata/latex_group.stockprice.Rdata")
 if(interbank.type == "r"){
   loan.network <- r.loan.network
   deposit.network <- r.deposit.network
   compound.network <- r.compound.network
+  
+  loan.network.so <- list()
+  loan.network.je <- list()
+  loan.network.ot <- list()
+  for (i in 1:length(loan.network)) {
+    temp.id <- match(colnames(loan.network[[i]]),group.stockprice$Abbr)
+    
+    locate <- which(group.stockprice$Eclass[temp.id]!="State-Owned Banks")
+    temp <- loan.network[[i]]
+    temp[locate,] <- 0
+    temp[,locate] <- 0
+    loan.network.so[[i]] <- temp
+    
+    locate <- which(group.stockprice$Eclass[temp.id]!="Joint-Equity Commercial Banks")
+    temp <- loan.network[[i]]
+    temp[locate,] <- 0
+    temp[,locate] <- 0
+    loan.network.je[[i]] <- temp
+    
+    locate <- which(group.stockprice$Eclass[temp.id]=="State-Owned Banks" |
+                      group.stockprice$Eclass[temp.id]=="Joint-Equity Commercial Banks")
+    temp <- loan.network[[i]]
+    temp[locate,] <- 0
+    temp[,locate] <- 0
+    loan.network.ot[[i]] <- temp
+  }
 }
 
 if(interbank.type == "pl"){
@@ -323,4 +350,4 @@ stargazer(dyErgm.result$result.vergm.l, title = "results of yearly ERGMs", dep.v
           digits = 2, 
           label = paste0("tab:",filename), 
           out = paste0(filename,".tex"), table.placement = "H", out.header = FALSE, no.space = TRUE, nobs = TRUE, model.numbers=FALSE, type = "latex")#type
-
+#NO.  & 10 & 10 & 10 & 10 & 10 & 10 & 10 & 10 \\ 

@@ -36,6 +36,31 @@ all.bid.M3 <- data[,n.all.bid.M3]
 all.bid.M6 <- data[,n.all.bid.M6]
 all.bid.M9 <- data[,n.all.bid.M9]
 all.bid.Y1 <- data[,n.all.bid.Y1]
+all.bid.all <- (all.bid.ON + all.bid.W1 + all.bid.W2 + all.bid.M1 + all.bid.M3 + all.bid.M6 + all.bid.M9 + all.bid.Y1)/8
+names(all.bid.all) <- bank10.abbr
+#################################################################
+# bid data description + unit root
+#################################################################
+bid <- all.bid.all
+d.bid <- diff(bid,diff=1)[-1,]
+g.bid <- d.bid/bid[-dim(bid)[1],]
+
+summary.g.bid <- sapply(g.bid * 100, each(mean, sd, min, median, max, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)#scale#
+summary.g.bid <- summary.g.bid %>% round(2) %>% t %>% as.data.frame
+names(summary.g.bid) <- c("mean", "sd", "min",  "median", "max", "skewness", "kurtosis")
+summary.g.bid$"I(0)" <- ADFtest.tau3(bid, selectlags = "AIC")[[1]][1,] %>% t
+summary.g.bid$"I(1)" <- ADFtest.tau3(d.bid, selectlags = "AIC")[[1]][1,] %>% t
+write.xlsx(summary.g.bid, file = "latex/report/excel/summary_g_bid.xlsx", row.names = TRUE)
+summary.g.bid <- xtable(summary.g.bid, caption = "Summary of Shibor Bids",
+                        label = "tab:summary_g_bid"
+)
+align(summary.g.bid) <- "llllllllll"
+print(summary.g.bid, 
+      file="latex/report/table/summary_g_bid.tex", 
+      sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+      caption.placement = "top",
+      comment = "TRUE"
+)
 #################################################################
 # load sp group
 #################################################################
@@ -68,43 +93,8 @@ for(i in 1:length.fnlist){
 names(shibor)[1] <- "Date"
 shibor$Date<- substr(shibor$Date, 1, 10)
 ## term spread
-term.spread <- (shibor$`1Y`-shibor$`9M`+
-               shibor$`1Y`-shibor$`6M`+
-               shibor$`1Y`-shibor$`3M`+
-               shibor$`1Y`-shibor$`1M`+
-               shibor$`1Y`-shibor$`2W`+
-               shibor$`1Y`-shibor$`1W`+
-               shibor$`1Y`-shibor$`O/N`+
-               
-               shibor$`9M`-shibor$`6M`+
-               shibor$`9M`-shibor$`3M`+
-               shibor$`9M`-shibor$`1M`+
-               shibor$`9M`-shibor$`2W`+
-               shibor$`9M`-shibor$`1W`+
-               shibor$`9M`-shibor$`O/N`+
-               
-               shibor$`6M`-shibor$`3M`+
-               shibor$`6M`-shibor$`1M`+
-               shibor$`6M`-shibor$`2W`+
-               shibor$`6M`-shibor$`1W`+
-               shibor$`6M`-shibor$`O/N`+
-               
-               shibor$`3M`-shibor$`1M`+
-               shibor$`3M`-shibor$`2W`+
-               shibor$`3M`-shibor$`1W`+
-               shibor$`3M`-shibor$`O/N`+
-               
-               shibor$`1M`-shibor$`2W`+
-               shibor$`1M`-shibor$`1W`+
-               shibor$`1M`-shibor$`O/N`+
-               
-               shibor$`2W`-shibor$`1W`+
-               shibor$`2W`-shibor$`O/N`+
-               
-               shibor$`1W`-shibor$`O/N`)/28
-
 term.spread <- (7*shibor$`1Y` + 5*shibor$`9M` + 3*shibor$`6M` + shibor$`3M` - shibor$`1M` - 3*shibor$`2W` - 5*shibor$`1W`- 7*shibor$`O/N`)/28
-
+term.spread <- (shibor$`1Y` + shibor$`9M` + shibor$`6M` + shibor$`3M` - shibor$`1M` - shibor$`2W` - shibor$`1W`- shibor$`O/N`)/4
 data <- cbind(shibor[,-1], term.spread)
 names(data)[ncol(data)] <- "Term Spread"
 dy.data <- xts(data, as.Date(shibor$Date, format='%Y-%m-%d'))
@@ -133,6 +123,30 @@ is.higher$crisis.sma20 <- TTR::SMA(is.higher$sum,20)
 is.higher$crisis <- cut(is.higher$sum,breaks = 5, include.lowest=F, labels = c(1:5))
 is.higher <- xts(is.higher, as.Date(is.higher$Date, format='%Y-%m-%d'))
 
+## shibor: is shorter rae higher than the longer one? method 2
+is.higher <- shibor
+temp <- data.frame(temp1 = (is.higher$`1Y` < is.higher$`O/N`) %>% as.numeric,
+temp2 = (is.higher$`1Y` < is.higher$`1W`) %>% as.numeric,
+temp3 = (is.higher$`1Y` < is.higher$`2W`) %>% as.numeric,
+temp4 = (is.higher$`1Y` < is.higher$`1M`) %>% as.numeric,
+temp5 = (is.higher$`9M` < is.higher$`O/N`) %>% as.numeric,
+temp6 = (is.higher$`9M` < is.higher$`1W`) %>% as.numeric,
+temp7 = (is.higher$`9M` < is.higher$`2W`) %>% as.numeric,
+temp8 = (is.higher$`9M` < is.higher$`1M`) %>% as.numeric,
+temp9 = (is.higher$`6M` < is.higher$`O/N`) %>% as.numeric,
+temp10 = (is.higher$`6M` < is.higher$`1W`) %>% as.numeric,
+temp11 = (is.higher$`6M` < is.higher$`2W`) %>% as.numeric,
+temp12 = (is.higher$`6M` < is.higher$`1M`) %>% as.numeric,
+temp13 = (is.higher$`3M` < is.higher$`O/N`) %>% as.numeric,
+temp14 = (is.higher$`3M` < is.higher$`1W`) %>% as.numeric,
+temp15 = (is.higher$`3M` < is.higher$`2W`) %>% as.numeric,
+temp16 = (is.higher$`3M` < is.higher$`1M`) %>% as.numeric)
+  
+is.higher$sum <- rowSums(temp)
+is.higher$crisis.sma20 <- TTR::SMA(is.higher$sum,20)
+is.higher$crisis <- cut(is.higher$sum,breaks = 5, include.lowest=F, labels = c(1:5))
+is.higher <- xts(is.higher, as.Date(is.higher$Date, format='%Y-%m-%d'))
+
 save(is.higher,file = "data/Rdata/latex_is.higher.Rdata")
 
 data <- cbind(shibor[,-1], as.data.frame(is.higher$crisis.sma20))
@@ -143,7 +157,7 @@ color <- c(colorRampPalette(c("red", "white"))(5)[-5],colorRampPalette(c("blue",
 dygraph.interbank(dy.data, dy.main, color) %>% 
   dyAxis("y", label = "Shanghai Interbank Offered Rate", independentTicks = T) %>%
   dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
-  dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
+  dySeries("Crisis", label = "Crisis", color = "black", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
 
 #################################################################
 # summary shibor
@@ -152,7 +166,7 @@ su.shibor <- shibor[,-1]
 names(su.shibor) <- c("O/N","W1","W2","M1","M3","M6","M9","Y1")
 summary.shibor <- sapply(su.shibor %>% na.omit, each(mean, sd, min, median, max, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
 summary.shibor <- summary.shibor %>% round(2) %>% t
-names(summary.shibor) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
+names(summary.shibor) <- c("mean", "sd", "min",  "median", "max", "skewness", "kurtosis")
 write.xlsx(summary.shibor, file = "latex/report/excel/summary_shibor.xlsx", row.names = TRUE)
 
 summary.shibor <- xtable(summary.shibor, caption = "Data Summary of Shibor",
@@ -165,10 +179,6 @@ print(summary.shibor,
       caption.placement = "top",
       comment = "TRUE"
 )
-
-
-
-
 
 #################################################################
 # bank list
@@ -335,7 +345,7 @@ wind <- wind[,selected.wind]
 
 summary.wind <- sapply(wind %>% na.omit, each(mean, sd, min, median, max, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
 summary.wind <- summary.wind %>% round(2) %>% t
-names(summary.wind) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
+names(summary.wind) <- c("mean", "sd", "min",  "median", "max", "skewness", "kurtosis")
 write.xlsx(summary.wind, file = "latex/report/excel/summary_wind.xlsx", row.names = TRUE)
 
 summary.wind <- xtable(summary.wind, caption = "Data Summary of Banks' Operating Indicators",
@@ -377,13 +387,34 @@ print(correlation.table,
 names(g.sp) <- bank10.abbr
 summary.g.sp <- sapply(g.sp * 100, each(mean, sd, min, median, max, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)#scale#
 summary.g.sp <- summary.g.sp %>% round(2) %>% t
-names(summary.g.sp) <- c("min", "max", "median", "mean", "sd", "skewness", "kurtosis")
+names(summary.g.sp) <- c("mean", "sd", "min",  "median", "max", "skewness", "kurtosis")
 write.xlsx(summary.g.sp, file = "latex/report/excel/summary_g_sp.xlsx", row.names = TRUE)
 
 summary.g.sp <- xtable(summary.g.sp, caption = "Data Summary of Stock Price in Log Difference",
                        label = "tab:summary_g_sp"
 )
 align(summary.g.sp) <- "llllllll"
+print(summary.g.sp, 
+      file="latex/report/table/summary_g_sp.tex", 
+      sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+      caption.placement = "top",
+      comment = "TRUE"
+)
+#################################################################
+# g.sp data description + unit root
+#################################################################
+names(g.sp) <- bank10.abbr
+summary.g.sp <- sapply(g.sp * 100, each(mean, sd, min, median, max, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)#scale#
+summary.g.sp <- summary.g.sp %>% round(2) %>% t %>% as.data.frame
+names(summary.g.sp) <- c("mean", "sd", "min",  "median", "max", "skewness", "kurtosis")
+summary.g.sp$"I(0)" <- ADFtest.tau3(sp, selectlags = "AIC")[[1]][1,] %>% t
+d.sp <- diff(sp,diff=1)[-1,]
+summary.g.sp$"I(1)" <- ADFtest.tau3(d.sp, selectlags = "AIC")[[1]][1,] %>% t
+write.xlsx(summary.g.sp, file = "latex/report/excel/summary_g_sp.xlsx", row.names = TRUE)
+summary.g.sp <- xtable(summary.g.sp, caption = "Summary of Stock Price",
+                       label = "tab:summary_g_sp"
+)
+align(summary.g.sp) <- "llllllllll"
 print(summary.g.sp, 
       file="latex/report/table/summary_g_sp.tex", 
       sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
@@ -445,6 +476,64 @@ rbokeh <- forceNetwork(Links = networkD3.matrix[[1]], Nodes = networkD3.matrix[[
                        Group = "group", legend = T, fontSize = 15, opacity = 0.8, opacityNoHover = 1,
                        height = 700 , width = 700, bounded = F, zoom = T, charge = -100)
 widget2png(rbokeh , file = paste0("latex/report/figure/snVECMw", ".png"), timeout = 1200)
+#################################################################
+# gir vecm matrix of sp
+#################################################################
+vecm.gir0 <- dy.VECM.GIR(data = sp["2007-01-01/2016-12-31"], n.ahead = 0, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir0 <- matrix(data = unlist(vecm.gir0),nrow =10,ncol = 10)
+vecm.gir1 <- dy.VECM.GIR(data = sp["2007-01-01/2016-12-31"], n.ahead = 1, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir1 <- matrix(data = unlist(vecm.gir1),nrow =10,ncol = 10)
+vecm.gir2 <- dy.VECM.GIR(data = sp["2007-01-01/2016-12-31"], n.ahead = 2, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir2 <- matrix(data = unlist(vecm.gir2),nrow =10,ncol = 10)
+vecm.gir3 <- dy.VECM.GIR(data = sp["2007-01-01/2016-12-31"], n.ahead = 3, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir3 <- matrix(data = unlist(vecm.gir3),nrow =10,ncol = 10)
+vecm.gir4 <- dy.VECM.GIR(data = sp["2007-01-01/2016-12-31"], n.ahead = 4, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir4 <- matrix(data = unlist(vecm.gir4),nrow =10,ncol = 10)
+vecm.gir5 <- dy.VECM.GIR(data = sp["2007-01-01/2016-12-31"], n.ahead = 5, span = "yearly", keep.vecm = T, rank = 4)[[1]];vecm.gir5 <- matrix(data = unlist(vecm.gir5),nrow =10,ncol = 10)
+
+GIR <- array(c(vecm.gir0,
+               vecm.gir1,
+               vecm.gir2,
+               vecm.gir3,
+               vecm.gir4,
+               vecm.gir5), dim = c(10,10,6))
+temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+temp <- matrix(temp %>% unlist,10,10) #%>% t
+colnames(temp) <- bank10.abbr;rownames(temp) <- bank10.abbr
+temp <- temp %>% t
+temp <- round(temp,1)
+temp <- xtable(temp, caption = "Spillover Effect in Stock Market",
+                       label = "tab:matirx_sp"
+)
+align(summary.g.sp) <- "llllllllll"
+print(temp, 
+      file="latex/report/table/matrix_sp.tex", 
+      sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+      caption.placement = "top",
+      comment = "TRUE"
+)
+#################################################################
+# aenet matrix of bid
+#################################################################
+aenet.myl.ON <- aenet.fix(data = merge(all.bid.ON,bond), fix = "yearly", start.point = "NULL",end.point = "NULL")$Coef[[1]][1:10,1:10] %>% replaceNA0
+aenet.myl.W1 <- aenet.fix(data = merge(all.bid.W1,bond), fix = "yearly", start.point = "NULL",end.point = "NULL")$Coef[[1]][1:10,1:10] %>% replaceNA0
+aenet.myl.W2 <- aenet.fix(data = merge(all.bid.W2,bond), fix = "yearly", start.point = "NULL",end.point = "NULL")$Coef[[1]][1:10,1:10] %>% replaceNA0
+aenet.myl.M1 <- aenet.fix(data = merge(all.bid.M1,bond), fix = "yearly", start.point = "NULL",end.point = "NULL")$Coef[[1]][1:10,1:10] %>% replaceNA0
+aenet.myl.M3 <- aenet.fix(data = merge(all.bid.M3,bond), fix = "yearly", start.point = "NULL",end.point = "NULL")$Coef[[1]][1:10,1:10] %>% replaceNA0
+aenet.myl.M6 <- aenet.fix(data = merge(all.bid.M6,bond), fix = "yearly", start.point = "NULL",end.point = "NULL")$Coef[[1]][1:10,1:10] %>% replaceNA0
+aenet.myl.M9 <- aenet.fix(data = merge(all.bid.M9,bond), fix = "yearly", start.point = "NULL",end.point = "NULL")$Coef[[1]][1:10,1:10] %>% replaceNA0
+aenet.myl.Y1 <- aenet.fix(data = merge(all.bid.Y1,bond), fix = "yearly", start.point = "NULL",end.point = "NULL")$Coef[[1]][1:10,1:10] %>% replaceNA0
+aenet.myl.all <- (aenet.myl.ON + aenet.myl.W1 + aenet.myl.W2 + aenet.myl.M1 + aenet.myl.M3 + aenet.myl.M6 + aenet.myl.M9 + aenet.myl.Y1)/8
+
+temp <- aenet.myl.all
+colnames(temp) <- bank10.abbr;rownames(temp) <- bank10.abbr
+temp <- temp %>% t
+temp <- round(temp,1)
+temp <- xtable(temp, caption = "Spillover Effect in Interbank Market",
+               label = "tab:matirx_bid"
+)
+align(summary.g.bid) <- "llllllllll"
+print(temp, 
+      file="latex/report/table/matrix_bid.tex", 
+      sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+      caption.placement = "top",
+      comment = "TRUE"
+)
 #################################################################
 # ADF test for sp
 #################################################################
@@ -1383,5 +1472,6 @@ save(y.period,
      var.myl.fevd.short,
      var.myl.fevd.all,
      var.myl.fevd.long,
-     file = paste0("data/Rdata/latex_yearly_networky_shiborbid_gir.Rdata")
+     file = paste0("data/Rdata/latex_yearly_networky_shiborbid_fevd.Rdata")
 )
+

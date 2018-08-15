@@ -2,7 +2,7 @@
 timestart <- Sys.time()
 #####################################################################
 ID <- c("1")
-network.y.type <- "short"#"VECM.GIR"#VAR.GIR#
+network.y.type <- "all"#"VECM.GIR"#VAR.GIR#
 interbank.type <- "r"#r#pl#pb#ab#al
 inclusion.edgecov <- c("loan.so","loan.je","loan.ot")#loan#deposit#compound
 inclusion.nodecov <- NULL
@@ -162,37 +162,14 @@ if(interbank.type == "r"){
     temp[,locate] <- 0
     loan.network.ot[[i]] <- temp
   }
+  deposit.network <- deposit
+  compound.network <- list()
+  for (i in 1:length(loan)) {
+    compound.network[[i]] <- loan[[i]] + deposit[[i]]
+  }
 }
 
-deposit.network <- deposit
-compound.network <- list()
-for (i in 1:length(loan)) {
-  compound.network[[i]] <- loan[[i]] + deposit[[i]]
-}
 
-if(interbank.type == "pl"){
-  loan.network <- pl.loan.network
-  deposit.network <- pl.deposit.network
-  compound.network <- pl.compound.network
-}
-
-if(interbank.type == "pb"){
-  loan.network <- pb.loan.network
-  deposit.network <- pb.deposit.network
-  compound.network <- pb.compound.network
-}
-
-if(interbank.type == "ab"){
-  loan.network <- ab.loan.network
-  deposit.network <- ab.deposit.network
-  compound.network <- ab.compound.network
-}
-
-if(interbank.type == "al"){
-  loan.network <- al.loan.network
-  deposit.network <- al.deposit.network
-  compound.network <- al.compound.network
-}
 #################################################################
 # basic setting
 dyErgm.result <- dyCoefErgm.yearly(data = network.y[1:10], set = set, 
@@ -226,3 +203,7 @@ stargazer(dyErgm.result$result.vergm.l, title = "results of yearly ERGMs", dep.v
           label = paste0("tab:",filename), 
           out = paste0(filename,".tex"), table.placement = "H", out.header = FALSE, no.space = TRUE, nobs = TRUE, model.numbers=FALSE, type = "latex")#type
 
+for (i in 1:10) {
+  print(dim(network.y[[i]])[1])
+}
+#NO.  & 12 & 12 & 14 & 15 & 15 & 15 & 17 & 17 & 17& 17 \\ 

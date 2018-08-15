@@ -393,6 +393,6 @@ aenet.dygraph <- function(x,title){
   dygraph.interbank(dy.data, dy.main, color) %>% 
     dyAxis("y", label = "Spillover Index", independentTicks = T) %>%
     dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
-    dySeries("Crisis", label = "Crisis", color = "#FFC107", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
+    dySeries("Crisis", label = "Crisis", color = "black", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
 }
 

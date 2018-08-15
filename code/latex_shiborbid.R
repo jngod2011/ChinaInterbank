@@ -68,9 +68,6 @@ raw.shibor.bid.M3 <- list()
 raw.shibor.bid.M6 <- list()
 raw.shibor.bid.M9 <- list()
 raw.shibor.bid.Y1 <- list()
-raw.shibor.bid.short <- list()
-raw.shibor.bid.long <- list()
-raw.shibor.bid.all <- list()
 for (i in 1:length(raw.shibor.bid)) {
   temp <- raw.shibor.bid[[i]]
   names(temp) <- c("Date", "Bank", "ON", "W1", "W2", "M1", "M3", "M6", "M9", "Y1")
@@ -94,6 +91,7 @@ na.list <- list(c("Term", "渣打上海", "汇丰上海","德意志上海"),
                 c("Term","国开行"),
                 c("Term","国开行")
                 )
+na.list %>% unlist %>% unique
 names(na.list) <- c(2006:2018)
 
 for (i in 1:length(raw.shibor.bid)) {
@@ -168,12 +166,6 @@ for (i in 1:length(raw.shibor.bid)) {
   temp <- xts(temp$ximp, as.Date(temp.date, format='%Y-%m-%d'));
   raw.shibor.bid.Y1[[i]] <- temp;
   ifelse(sum(is.na(temp)) > 0, print(paste0(i,"Y1:",is.na(temp) %>% sum)),print("#"))
-  
-  raw.shibor.bid.short[[i]] <- (raw.shibor.bid.ON[[i]] + raw.shibor.bid.W1[[i]] + raw.shibor.bid.W2[[i]] + raw.shibor.bid.M1[[i]])/4
-  
-  raw.shibor.bid.long[[i]] <- (raw.shibor.bid.M3[[i]] + raw.shibor.bid.M6[[i]] + raw.shibor.bid.M9[[i]] + raw.shibor.bid.Y1[[i]])/4
-  
-  raw.shibor.bid.all[[i]] <- (raw.shibor.bid.short[[i]] + raw.shibor.bid.long[[i]])/2
 }
 
 all.name.shiborbid <- c()
@@ -189,9 +181,106 @@ names(list.bank) <- c(2006:2018)
 #library("VIM")
 #aggr(temp,prop=FALSE,numbers=TRUE)
 #View(temp)
+
+
+
+raw.shibor.bid.short <- list()
+raw.shibor.bid.long <- list()
+raw.shibor.bid.all <- list()
+for (t in 1:13) {
+  temp.data <- raw.shibor.bid.ON[[t]]
+  id <- match(names(temp.data),group.bid$Cname)
+  temp.group.bid <- group.bid[id,]
+  names(temp.data) <- temp.group.bid$Abbr
+  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
+  temp.group.bid <- temp.group.bid[o,]
+  temp.data <- temp.data[,temp.group.bid$Abbr]
+  raw.shibor.bid.ON[[t]] <- temp.data
+  
+  temp.data <- raw.shibor.bid.W1[[t]]
+  id <- match(names(temp.data),group.bid$Cname)
+  temp.group.bid <- group.bid[id,]
+  names(temp.data) <- temp.group.bid$Abbr
+  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
+  temp.group.bid <- temp.group.bid[o,]
+  temp.data <- temp.data[,temp.group.bid$Abbr]
+  raw.shibor.bid.W1[[t]] <- temp.data
+  
+  temp.data <- raw.shibor.bid.W2[[t]]
+  id <- match(names(temp.data),group.bid$Cname)
+  temp.group.bid <- group.bid[id,]
+  names(temp.data) <- temp.group.bid$Abbr
+  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
+  temp.group.bid <- temp.group.bid[o,]
+  temp.data <- temp.data[,temp.group.bid$Abbr]
+  raw.shibor.bid.W2[[t]] <- temp.data
+  
+  temp.data <- raw.shibor.bid.W2[[t]]
+  id <- match(names(temp.data),group.bid$Cname)
+  temp.group.bid <- group.bid[id,]
+  names(temp.data) <- temp.group.bid$Abbr
+  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
+  temp.group.bid <- temp.group.bid[o,]
+  temp.data <- temp.data[,temp.group.bid$Abbr]
+  raw.shibor.bid.W2[[t]] <- temp.data
+  
+  temp.data <- raw.shibor.bid.M3[[t]]
+  id <- match(names(temp.data),group.bid$Cname)
+  temp.group.bid <- group.bid[id,]
+  names(temp.data) <- temp.group.bid$Abbr
+  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
+  temp.group.bid <- temp.group.bid[o,]
+  temp.data <- temp.data[,temp.group.bid$Abbr]
+  raw.shibor.bid.M3[[t]] <- temp.data
+  
+  temp.data <- raw.shibor.bid.M6[[t]]
+  id <- match(names(temp.data),group.bid$Cname)
+  temp.group.bid <- group.bid[id,]
+  names(temp.data) <- temp.group.bid$Abbr
+  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
+  temp.group.bid <- temp.group.bid[o,]
+  temp.data <- temp.data[,temp.group.bid$Abbr]
+  raw.shibor.bid.M6[[t]] <- temp.data
+  
+  temp.data <- raw.shibor.bid.M9[[t]]
+  id <- match(names(temp.data),group.bid$Cname)
+  temp.group.bid <- group.bid[id,]
+  names(temp.data) <- temp.group.bid$Abbr
+  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
+  temp.group.bid <- temp.group.bid[o,]
+  temp.data <- temp.data[,temp.group.bid$Abbr]
+  raw.shibor.bid.M9[[t]] <- temp.data
+  
+  temp.data <- raw.shibor.bid.Y1[[t]]
+  id <- match(names(temp.data),group.bid$Cname)
+  temp.group.bid <- group.bid[id,]
+  names(temp.data) <- temp.group.bid$Abbr
+  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
+  temp.group.bid <- temp.group.bid[o,]
+  temp.data <- temp.data[,temp.group.bid$Abbr]
+  raw.shibor.bid.Y1[[t]] <- temp.data
+  
+  raw.shibor.bid.short[[t]] <- (raw.shibor.bid.ON[[t]] + raw.shibor.bid.W1[[t]] + raw.shibor.bid.W2[[t]] + raw.shibor.bid.M1[[t]])/4
+  raw.shibor.bid.long[[t]] <- (raw.shibor.bid.M3[[t]] + raw.shibor.bid.M6[[t]] + raw.shibor.bid.M9[[t]] + raw.shibor.bid.Y1[[t]])/4
+  raw.shibor.bid.all[[t]] <- (raw.shibor.bid.short[[t]] + raw.shibor.bid.long[[t]])/2
+  }
+    
+save(raw.shibor.bid.ON,
+  raw.shibor.bid.W1,
+  raw.shibor.bid.W2,
+  raw.shibor.bid.M1,
+  raw.shibor.bid.M3,
+  raw.shibor.bid.M6,
+  raw.shibor.bid.M9,
+  raw.shibor.bid.Y1,
+  raw.shibor.bid.short,
+  raw.shibor.bid.long,
+  raw.shibor.bid.all,
+  file = "data/Rdata/latex_ALLshiborbid_RawShiborBid.Rdata")
 #################################################################
 # network.y
 #################################################################
+load(file = "data/Rdata/latex_ALLshiborbid_RawShiborBid.Rdata")
 aenet.myl.ON <- list()
 aenet.myl.W1 <- list()
 aenet.myl.W2 <- list()
@@ -381,6 +470,144 @@ for (i in 1:length(raw.wind.full)) {
 
 save(raw.wind.full, file = "data/Rdata/latex_shiborbid_raw.wind.Rdata")
 load(file = "data/Rdata/latex_shiborbid_raw.wind.Rdata")
+#################################################################
+# YearlyAll_fd_gir.R
+#################################################################
+load(file = "data/Rdata/latex_ALLshiborbid_RawShiborBid.Rdata")
+load(file = "data/Rdata/latex_group.bid.full.Rdata")
+var.myl.gir <- list()
+vecm.myl.gir <- list()
+network.y <- list()
+
+raw.shibor.bid <- list(
+  raw.shibor.bid.ON,
+  raw.shibor.bid.W1,
+  raw.shibor.bid.W2,
+  raw.shibor.bid.M1,
+  raw.shibor.bid.M3,
+  raw.shibor.bid.M6,
+  raw.shibor.bid.M9,
+  raw.shibor.bid.Y1
+)
+
+type.list <- c("ON","W1","W2","M1","M3","M6","M9","Y1")
+for (type in 1:length(type.list)) {
+  for (t in 1:length(raw.shibor.bid.Y1)) {
+    temp <- raw.shibor.bid[[type]][[t]]
+    n.bank <- dim(temp)[2]
+    try.error <- try(vecm.tsDyn <- VECM(data = temp, lag=2, estim="ML"),silent = TRUE)#Type of estimator: 2OLS for the two-step approach or ML for Johansen MLE
+    rank.test <- vecm.tsDyn
+    rank.eigen <- rank.test(vecm.tsDyn, cval = 0.01, type = "eigen")$r
+    rank.trace <- rank.test(vecm.tsDyn, cval = 0.01, type = "trace")$r
+    rank <- floor((rank.eigen + rank.trace)/2)#4
+    if(rank >= n.bank){
+      print(paste0("rank is ", rank," for ",type.list[type]," with nbank = ",n.bank))  
+    }
+  }
+}
+
+
+for (type in 1:length(type.list)) {
+  for (t in 3:length(raw.shibor.bid.Y1)) {
+    temp.data <- raw.shibor.bid[[type]][[t]]
+    n.bank <- dim(temp.data)[2]
+    temp.abbr <- names(temp.data)
+    if(0){
+      vecm.gir0 <- dy.VECM.GIR(data = temp.data, n.ahead = 0, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir0 <- matrix(data = unlist(vecm.gir0),nrow = n.bank, ncol = n.bank)
+      vecm.gir1 <- dy.VECM.GIR(data = temp.data, n.ahead = 1, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir1 <- matrix(data = unlist(vecm.gir1),nrow = n.bank, ncol = n.bank)
+      vecm.gir2 <- dy.VECM.GIR(data = temp.data, n.ahead = 2, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir2 <- matrix(data = unlist(vecm.gir2),nrow = n.bank, ncol = n.bank)
+      vecm.gir3 <- dy.VECM.GIR(data = temp.data, n.ahead = 3, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir3 <- matrix(data = unlist(vecm.gir3),nrow = n.bank, ncol = n.bank)
+      vecm.gir4 <- dy.VECM.GIR(data = temp.data, n.ahead = 4, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir4 <- matrix(data = unlist(vecm.gir4),nrow = n.bank, ncol = n.bank)
+      vecm.gir5 <- dy.VECM.GIR(data = temp.data, n.ahead = 5, span = "yearly", keep.vecm = T, rank = rank)[[1]];vecm.gir5 <- matrix(data = unlist(vecm.gir5),nrow = n.bank, ncol = n.bank)
+      GIR <- array(c(vecm.gir0,
+                     vecm.gir1,
+                     vecm.gir2,
+                     vecm.gir3,
+                     vecm.gir4,
+                     vecm.gir5), dim = c(n.bank,n.bank,6))
+      temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+      temp <- matrix(temp %>% unlist,n.bank,n.bank) #%>% t
+      vecm.myl.gir[[t]] <- temp
+      colnames(vecm.myl.gir[[t]]) <- temp.abbr;rownames(vecm.myl.gir[[t]]) <- temp.abbr
+    }
+    
+    temp.date <- index(temp.data)
+    temp.date <-  diff(log(temp.data), lag=1)[-1,]
+    
+    var.gir0 <- dy.VAR.GIR(data = temp.data, n.ahead = 0, span = "yearly")[[1]];var.gir0 <- matrix(data = unlist(var.gir0),nrow = n.bank,ncol = n.bank)
+    var.gir1 <- dy.VAR.GIR(data = temp.data, n.ahead = 1, span = "yearly")[[1]];var.gir1 <- matrix(data = unlist(var.gir1),nrow = n.bank,ncol = n.bank)
+    var.gir2 <- dy.VAR.GIR(data = temp.data, n.ahead = 2, span = "yearly")[[1]];var.gir2 <- matrix(data = unlist(var.gir2),nrow = n.bank,ncol = n.bank)
+    var.gir3 <- dy.VAR.GIR(data = temp.data, n.ahead = 3, span = "yearly")[[1]];var.gir3 <- matrix(data = unlist(var.gir3),nrow = n.bank,ncol = n.bank)
+    var.gir4 <- dy.VAR.GIR(data = temp.data, n.ahead = 4, span = "yearly")[[1]];var.gir4 <- matrix(data = unlist(var.gir4),nrow = n.bank,ncol = n.bank)
+    var.gir5 <- dy.VAR.GIR(data = temp.data, n.ahead = 5, span = "yearly")[[1]];var.gir5 <- matrix(data = unlist(var.gir5),nrow = n.bank,ncol = n.bank)
+    GIR <- array(c(var.gir0,
+                   var.gir1,
+                   var.gir2,
+                   var.gir3,
+                   var.gir4,
+                   var.gir5), dim = c(n.bank,n.bank,6))
+    temp <- weighted_gir(GIR, divided=1)$weighted.matrix
+    temp <- matrix(temp %>% unlist,n.bank,n.bank) #%>% t
+    var.myl.gir[[t]] <- temp
+    colnames(var.myl.gir[[t]]) <- temp.abbr;rownames(var.myl.gir[[t]] ) <- temp.abbr
+  }
+  save(var.myl.gir,
+       file = paste0("data/Rdata/latex_yearly_networky_Allshiborbid_gir_",type.list[type],".Rdata")
+  )
+}
+
+load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_ON.Rdata")
+var.myl.gir.ON <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_W1.Rdata")
+var.myl.gir.W1 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_W2.Rdata")
+var.myl.gir.W2 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_M1.Rdata")
+var.myl.gir.M1 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_M3.Rdata")
+var.myl.gir.M3 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_M6.Rdata")
+var.myl.gir.M6 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_M9.Rdata")
+var.myl.gir.M9 <- var.myl.gir
+load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_Y1.Rdata")
+var.myl.gir.Y1 <- var.myl.gir
+
+var.myl.gir.short <- list()
+for(i in 1:length(var.myl.gir.ON)){
+  var.myl.gir.short[[i]] <- (var.myl.gir.ON[[i]] + 
+                               var.myl.gir.W1[[i]] + 
+                               var.myl.gir.W2[[i]] + 
+                               var.myl.gir.M1[[i]])/4
+}
+
+var.myl.gir.long <- list()
+for(i in 1:length(var.myl.gir.ON)){
+  var.myl.gir.long[[i]] <- (var.myl.gir.M3[[i]] + 
+                              var.myl.gir.M6[[i]] + 
+                              var.myl.gir.M9[[i]] + 
+                              var.myl.gir.Y1[[i]])/4
+}
+
+var.myl.gir.all <- list()
+for(i in 1:length(var.myl.gir.ON)){
+  var.myl.gir.all[[i]] <- (var.myl.gir.short[[i]]+var.myl.gir.long[[i]])/2
+}
+
+save(y.period,
+     var.myl.gir.ON,
+     var.myl.gir.W1,
+     var.myl.gir.W2,
+     var.myl.gir.M1,
+     var.myl.gir.M3,
+     var.myl.gir.M6,
+     var.myl.gir.M9,
+     var.myl.gir.Y1,
+     var.myl.gir.short,
+     var.myl.gir.all,
+     var.myl.gir.long,
+     file = paste0("data/Rdata/latex_yearly_networky_Allshiborbid_gir.Rdata")
+)
 
 
 
