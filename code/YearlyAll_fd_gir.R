@@ -1,3 +1,4 @@
+#YearlyAll_fd_gir.R
 #time###########################################################################################
 timestart <- Sys.time()
 #####################################################################
@@ -90,46 +91,40 @@ y.period <- c(#"2006-12-31",
   #"2018-12-31"
 )
 # the sample in 2018 is too small
-load(file = "data/Rdata/latex_ALLshiborbid_aenet.Rdata")
-list.bank <- list.bank[c(-1,-12,-13)]
-if(network.y.type=="VECM.GIR"){
-  network.y <- vecm.myl.gir[c(-1,-12,-13)]
-}
-if(network.y.type=="VAR.GIR"){
-  network.y <- var.myl.gir[c(-1,-12,-13)]
-}
+load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir.Rdata")
+list.bank <- list.bank[c(-11,-12)]
 if(network.y.type=="short"){
-  network.y <- aenet.myl.short[c(-1,-12,-13)]
+  network.y <- var.myl.gir.short[c(-11,-12)]
 }
 if(network.y.type=="long"){
-  network.y <- aenet.myl.long[c(-1,-12,-13)]
+  network.y <- var.myl.gir.long[c(-11,-12)]
 }
 if(network.y.type=="all"){
-  network.y <- aenet.myl.all[c(-1,-12,-13)]
+  network.y <- var.myl.gir.all[c(-11,-12)]
 }
 if(network.y.type=="ON"){
-  network.y <- aenet.myl.ON[c(-1,-12,-13)]
+  network.y <- var.myl.gir.ON[c(-11,-12)]
 }
 if(network.y.type=="W1"){
-  network.y <- aenet.myl.W1[c(-1,-12,-13)]
+  network.y <- var.myl.gir.W1[c(-11,-12)]
 }
 if(network.y.type=="W2"){
-  network.y <- aenet.myl.W2[c(-1,-12,-13)]
+  network.y <- var.myl.gir.W2[c(-11,-12)]
 }
 if(network.y.type=="M1"){
-  network.y <- aenet.myl.M1[c(-1,-12,-13)]
+  network.y <- var.myl.gir.M1[c(-11,-12)]
 }
 if(network.y.type=="M3"){
-  network.y <- aenet.myl.M3[c(-1,-12,-13)]
+  network.y <- var.myl.gir.M3[c(-11,-12)]
 }
 if(network.y.type=="M6"){
-  network.y <- aenet.myl.M6[c(-1,-12,-13)]
+  network.y <- var.myl.gir.M6[c(-11,-12)]
 }
 if(network.y.type=="M9"){
-  network.y <- aenet.myl.M9[c(-1,-12,-13)]
+  network.y <- var.myl.gir.M9[c(-11,-12)]
 }
 if(network.y.type=="Y1"){
-  network.y <- aenet.myl.Y1[c(-1,-12,-13)]
+  network.y <- var.myl.gir.Y1[c(-11,-12)]
 }
 #loan###########################################################################################
 load(file = "data/Rdata/latex_shiborbid_LoanDeposit.Rdata")

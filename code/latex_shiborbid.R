@@ -215,15 +215,6 @@ for (t in 1:13) {
   temp.data <- temp.data[,temp.group.bid$Abbr]
   raw.shibor.bid.W2[[t]] <- temp.data
   
-  temp.data <- raw.shibor.bid.W2[[t]]
-  id <- match(names(temp.data),group.bid$Cname)
-  temp.group.bid <- group.bid[id,]
-  names(temp.data) <- temp.group.bid$Abbr
-  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
-  temp.group.bid <- temp.group.bid[o,]
-  temp.data <- temp.data[,temp.group.bid$Abbr]
-  raw.shibor.bid.W2[[t]] <- temp.data
-  
   temp.data <- raw.shibor.bid.M3[[t]]
   id <- match(names(temp.data),group.bid$Cname)
   temp.group.bid <- group.bid[id,]
@@ -508,7 +499,7 @@ for (type in 1:length(type.list)) {
 
 
 for (type in 1:length(type.list)) {
-  for (t in 3:length(raw.shibor.bid.Y1)) {
+  for (t in 2:length(raw.shibor.bid.Y1)) {
     temp.data <- raw.shibor.bid[[type]][[t]]
     n.bank <- dim(temp.data)[2]
     temp.abbr <- names(temp.data)
@@ -557,21 +548,21 @@ for (type in 1:length(type.list)) {
 }
 
 load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_ON.Rdata")
-var.myl.gir.ON <- var.myl.gir
+var.myl.gir.ON <- var.myl.gir[-1]
 load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_W1.Rdata")
-var.myl.gir.W1 <- var.myl.gir
+var.myl.gir.W1 <- var.myl.gir[-1]
 load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_W2.Rdata")
-var.myl.gir.W2 <- var.myl.gir
+var.myl.gir.W2 <- var.myl.gir[-1]
 load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_M1.Rdata")
-var.myl.gir.M1 <- var.myl.gir
+var.myl.gir.M1 <- var.myl.gir[-1]
 load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_M3.Rdata")
-var.myl.gir.M3 <- var.myl.gir
+var.myl.gir.M3 <- var.myl.gir[-1]
 load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_M6.Rdata")
-var.myl.gir.M6 <- var.myl.gir
+var.myl.gir.M6 <- var.myl.gir[-1]
 load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_M9.Rdata")
-var.myl.gir.M9 <- var.myl.gir
+var.myl.gir.M9 <- var.myl.gir[-1]
 load(file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir_Y1.Rdata")
-var.myl.gir.Y1 <- var.myl.gir
+var.myl.gir.Y1 <- var.myl.gir[-1]
 
 var.myl.gir.short <- list()
 for(i in 1:length(var.myl.gir.ON)){
@@ -594,7 +585,23 @@ for(i in 1:length(var.myl.gir.ON)){
   var.myl.gir.all[[i]] <- (var.myl.gir.short[[i]]+var.myl.gir.long[[i]])/2
 }
 
-save(y.period,
+y.period <- c(#"2006-12-31",
+  "2007-12-31",
+  "2008-12-31",
+  "2009-12-31",
+  "2010-12-31",
+  "2011-12-31",
+  "2012-12-31",
+  "2013-12-31",
+  "2014-12-31",
+  "2015-12-31",
+  "2016-12-31",
+  "2017-12-31",
+  "2018-12-31"
+)
+
+save(list.bank,
+  y.period,
      var.myl.gir.ON,
      var.myl.gir.W1,
      var.myl.gir.W2,
@@ -606,7 +613,7 @@ save(y.period,
      var.myl.gir.short,
      var.myl.gir.all,
      var.myl.gir.long,
-     file = paste0("data/Rdata/latex_yearly_networky_Allshiborbid_gir.Rdata")
+     file = "data/Rdata/latex_yearly_networky_Allshiborbid_gir.Rdata"
 )
 
 

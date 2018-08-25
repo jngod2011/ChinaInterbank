@@ -181,6 +181,32 @@ print(summary.shibor,
 )
 
 #################################################################
+# summary shibor + unit root
+#################################################################
+su.shibor <- shibor[,-1]
+names(su.shibor) <- c("O/N","W1","W2","M1","M3","M6","M9","Y1")
+summary.shibor <- sapply(su.shibor %>% na.omit, each(mean, sd, min, median, max, skewness, kurtosis))# * c(100,100,10000,10000,100,1,1)
+summary.shibor <- summary.shibor %>% round(2) %>% t
+names(summary.shibor) <- c("mean", "sd", "min",  "median", "max", "skewness", "kurtosis")
+summary.shibor <- as.data.frame(summary.shibor)
+summary.shibor$"I(0)" <- ADFtest.tau3(su.shibor, selectlags = "AIC")[[1]][1,] %>% t
+d.su.shibor <- su.shibor[-1,]-su.shibor[-dim(su.shibor)[1],]
+summary.shibor$"I(1)" <- ADFtest.tau3(d.su.shibor, selectlags = "AIC")[[1]][1,] %>% t
+
+write.xlsx(summary.shibor, file = "latex/report/excel/summary_shibor.xlsx", row.names = TRUE)
+
+summary.shibor <- xtable(summary.shibor, caption = "Summary of Shibor Bids for Different Maturities",
+                         label = "tab:summary_shibor"
+)
+align(summary.shibor) <- "llllllllll"
+print(summary.shibor, 
+      file="latex/report/table/summary_shibor.tex", 
+      sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+      caption.placement = "top",
+      comment = "TRUE"
+)
+
+#################################################################
 # bank list
 #################################################################
 load(file = "data/Rdata/latex_group.stockprice.Rdata")
@@ -495,17 +521,26 @@ GIR <- array(c(vecm.gir0,
 temp <- weighted_gir(GIR, divided=1)$weighted.matrix
 temp <- matrix(temp %>% unlist,10,10) #%>% t
 colnames(temp) <- bank10.abbr;rownames(temp) <- bank10.abbr
-temp <- temp %>% t
+temp <- temp %>% t %>% as.data.frame
+n.bank <- NCOL(temp)
+temp$OUT <- rowSums(temp)/n.bank
+temp <- rbind(temp,colSums(temp)/n.bank);rownames(temp)[dim(temp)[1]] <- "IN"
+temp$INDEX <- temp$OUT-temp[dim(temp)[1],] %>% t
+temp[dim(temp)[1],dim(temp)[2]] <- NA
+temp[dim(temp)[1],dim(temp)[2]-1] <- NA
 temp <- round(temp,1)
-temp <- xtable(temp, caption = "Spillover Effect in Stock Market",
+temp <- xtable(temp, caption = "Spillover Matrix of Stock Market",
                        label = "tab:matirx_sp"
 )
-align(summary.g.sp) <- "llllllllll"
+align(temp) <- "|l|llllllllll|l|l|"
+hlines <- c(-1, 0, nrow(temp)-1,nrow(temp))
 print(temp, 
       file="latex/report/table/matrix_sp.tex", 
       sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
       caption.placement = "top",
-      comment = "TRUE"
+      comment = "TRUE",
+      hline.after = hlines,
+      na.print = NA
 )
 #################################################################
 # aenet matrix of bid
@@ -522,17 +557,26 @@ aenet.myl.all <- (aenet.myl.ON + aenet.myl.W1 + aenet.myl.W2 + aenet.myl.M1 + ae
 
 temp <- aenet.myl.all
 colnames(temp) <- bank10.abbr;rownames(temp) <- bank10.abbr
-temp <- temp %>% t
+temp <- temp %>% t %>% as.data.frame
+n.bank <- NCOL(temp)
+temp$OUT <- rowSums(temp)/n.bank
+temp <- rbind(temp,colSums(temp)/n.bank);rownames(temp)[dim(temp)[1]] <- "IN"
+temp$INDEX <- temp$OUT
+temp[dim(temp)[1],dim(temp)[2]] <- NA
+temp[dim(temp)[1],dim(temp)[2]-1] <- NA
 temp <- round(temp,1)
-temp <- xtable(temp, caption = "Spillover Effect in Interbank Market",
-               label = "tab:matirx_bid"
+temp <- xtable(temp, caption = "Spillover Matrix of Interbank Market",
+               label = "tab:matrix_bid"
 )
-align(summary.g.bid) <- "llllllllll"
+align(temp) <- "|l|llllllllll|l|l|"
+hlines <- c(-1, 0, nrow(temp)-1,nrow(temp))
 print(temp, 
       file="latex/report/table/matrix_bid.tex", 
       sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
       caption.placement = "top",
-      comment = "TRUE"
+      comment = "TRUE",
+      hline.after = hlines,
+      na.print = NA
 )
 #################################################################
 # ADF test for sp

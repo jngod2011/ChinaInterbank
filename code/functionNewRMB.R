@@ -22,24 +22,25 @@ toc <- function(){
 #################################################################
 # export ADF test
 #################################################################
-ADFtest.phi2 <- function(data){
-  result.ADFtest <- data.frame(matrix(NA, 1, ncol(data)))
+ADFtest.phi2 <- function(data, digits){
+  result.ADFtest <- data.frame(matrix(NA, 2, ncol(data)))
   names(result.ADFtest) <- names(data)
-  rownames(result.ADFtest) <- c("t-value")
+  rownames(result.ADFtest) <- c("t-value","lags")
   for(i in 1:ncol(data)){
     ADFtest.t <- ur.df(data[,i], type = "trend", selectlags = "AIC")
     if(abs(ADFtest.t@teststat[2]) < abs(ADFtest.t@cval[2,3])){
-      result.ADFtest[1, i] <- paste0(round(ADFtest.t@teststat[2],2),"")
+      result.ADFtest[1, i] <- paste0(round(ADFtest.t@teststat[2],digits),"")
     }
     if(abs(ADFtest.t@teststat[2]) >= abs(ADFtest.t@cval[2,3])){
-      result.ADFtest[1, i] <- paste0(round(ADFtest.t@teststat[2],0),"$^{*}$")
+      result.ADFtest[1, i] <- paste0(round(ADFtest.t@teststat[2],digits),"$^{*}$")
     }
     if(abs(ADFtest.t@teststat[2]) > abs(ADFtest.t@cval[2,2])){
-      result.ADFtest[1, i] <- paste0(round(ADFtest.t@teststat[2],0),"$^{**}$")
+      result.ADFtest[1, i] <- paste0(round(ADFtest.t@teststat[2],digits),"$^{**}$")
     }
     if(abs(ADFtest.t@teststat[2]) > abs(ADFtest.t@cval[2,1])){
-      result.ADFtest[1, i] <- paste0(round(ADFtest.t@teststat[2],0),"$^{***}$")
+      result.ADFtest[1, i] <- paste0(round(ADFtest.t@teststat[2],digits),"$^{***}$")
     }
+    result.ADFtest[2, ] <- ADFtest.t@lags
   }
   return(result.ADFtest)
 }

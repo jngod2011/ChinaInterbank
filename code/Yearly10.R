@@ -1,3 +1,4 @@
+#Yearly10.R
 #time###########################################################################################
 timestart <- Sys.time()
 #####################################################################
@@ -351,3 +352,4 @@ stargazer(dyErgm.result$result.vergm.l, title = "results of yearly ERGMs", dep.v
           label = paste0("tab:",filename), 
           out = paste0(filename,".tex"), table.placement = "H", out.header = FALSE, no.space = TRUE, nobs = TRUE, model.numbers=FALSE, type = "latex")#type
 #NO.  & 10 & 10 & 10 & 10 & 10 & 10 & 10 & 10 \\ 
+#NO.  & 10 & 10 & 10 & 10 & 10 & 10 & 10 & 10  \\ 
