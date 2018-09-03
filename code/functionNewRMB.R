@@ -22,12 +22,14 @@ toc <- function(){
 #################################################################
 # export ADF test
 #################################################################
-ADFtest.phi2 <- function(data, digits){
+ADFtest.phi2 <- function(data, digits, selectlags){#"AIC""BIC"
+  if(missing(selectlags)){selectlags <- "AIC"}
+  if(missing(digits)){digits <- 2}
   result.ADFtest <- data.frame(matrix(NA, 2, ncol(data)))
   names(result.ADFtest) <- names(data)
   rownames(result.ADFtest) <- c("t-value","lags")
   for(i in 1:ncol(data)){
-    ADFtest.t <- ur.df(data[,i], type = "trend", selectlags = "AIC")
+    ADFtest.t <- ur.df(data[,i], type = "trend", selectlags = selectlags)
     if(abs(ADFtest.t@teststat[2]) < abs(ADFtest.t@cval[2,3])){
       result.ADFtest[1, i] <- paste0(round(ADFtest.t@teststat[2],digits),"")
     }
@@ -103,6 +105,7 @@ genFEVD.VECM <- function (est, n.ahead, no.corr = F) {
 #################################################################
 genFEVD.VECM.boot.official <- function (est, boot = TRUE, n.ahead, no.corr = F, ci , runs , seed, band){
   Phi <- c()
+  #with or without tsDyn:: is the same
   Phi <- tsDyn::irf(est, n.ahead = n.ahead, boot = TRUE, ci = ci, runs = runs, seed = seed, impulse= NULL, response = NULL, ortho = F)
   if(band == "irf"){
     Phi <- lapply(1:(n.ahead + 1), function(j) sapply(Phi$irf, 
@@ -133,10 +136,10 @@ genFEVD.VECM.boot.official <- function (est, boot = TRUE, n.ahead, no.corr = F, 
 # process of genFEVD for vecm using tsDyn library
 #################################################################
 process.genFEVD.VECMorVAR <- function(data, group, start.point = "NULL", end.point = "NULL", n.ahead = 1, keep.vecm , rank){
-  if(missing(group)) {group <- names(data)[-1]}
   if(missing(keep.vecm)) {keep.vecm <- FALSE}
   if(missing(rank)){rank <- NULL}
   if(class(data)[[1]] == "data.frame"){
+    if(missing(group)) {group <- names(data)[-1]}
     data <- data[, c("Date", group)] %>% na.omit
   if(start.point == "NULL") {start.point <- data$Date[1]}
   #if(start.point < data$Date[1]) {start.point <- data$Date[1]}
@@ -145,6 +148,8 @@ process.genFEVD.VECMorVAR <- function(data, group, start.point = "NULL", end.poi
   }
   
   if(class(data)[[1]] == "xts"){
+    if(missing(group)) {group <- names(data)}
+    data <- data[, c(group)] %>% na.omit
     data <- data %>% na.omit
     if(start.point == "NULL") {start.point <- index(data)[1]}
     #if(start.point < data$Date[1]) {start.point <- data$Date[1]}
@@ -235,7 +240,6 @@ process.genFEVD.VECMorVAR <- function(data, group, start.point = "NULL", end.poi
 # process of genFEVD for vecm using vars library (abandoned)
 #################################################################
 process.genFEVD.VECMorVAR.vars <- function(data, group, start.point = "NULL", end.point = "NULL", n.ahead){
-  
   data <- data[, c("Date", group)] %>% na.omit
   if(start.point == "NULL") {start.point <- data$Date[1]}
   #if(start.point < data$Date[1]) {start.point <- data$Date[1]}
@@ -364,7 +368,7 @@ dyFEVD.cny <- function(data, group, n.ahead, mode, span){
   row.cny <- as.data.frame(matrix(NA, dim(data)[1]-span, length(group)))
   
   if(class(data)[[1]] == "data.frame"){Date <- data$Date[-c(1:span)]}
-  if(class(data)[[1]] == "xts"){Date <- index(data)}
+  if(class(data)[[1]] == "xts"){Date <- index(data)[-c(1:span)]}
   start.point = "NULL"
   end.point = "NULL"
   if(mode == "fix"){
@@ -399,7 +403,8 @@ dyFEVD.cny <- function(data, group, n.ahead, mode, span){
 #################################################################
 dyFEVD.cny.boot.official <- function(data, group, ci = 0.05, seed, runs, mode, span, n.ahead){
   tic()
-  
+  if(missing(span)){span <- 0}
+  if(missing(group)){group <- names(data)}
   #there should be no NAs in data;should contain a Date column
   n <- nrow(data)
   pb <- txtProgressBar(min = 0, max = n-span, style = 3)
@@ -409,10 +414,33 @@ dyFEVD.cny.boot.official <- function(data, group, ci = 0.05, seed, runs, mode, s
   row.cny.lower <- as.data.frame(matrix(NA, dim(data)[1]-span, length(group)))
   row.cny.upper <- as.data.frame(matrix(NA, dim(data)[1]-span, length(group)))
   
-  Date <- data$Date[-c(1:span)]
+  if(class(data)[1]=="data.frame"){Date <- data$Date[-c(1:span)]}
+  if(class(data)[1]=="xts"){Date <- index(data)[-c(1:span)]}
   start.point = "NULL"
   end.point = "NULL"
-  
+  if(mode == "yearly"){
+    row.cny.irf <- as.data.frame(matrix(NA, 1, length(group)))
+    row.cny.lower <- as.data.frame(matrix(NA, 1, length(group)))
+    row.cny.upper <- as.data.frame(matrix(NA, 1, length(group)))
+    i <- 1
+    AllInf[[i]] <- process.genFEVD.VECMorVAR(data, group, start.point = "NULL", end.point = "NULL", n.ahead)
+    est <- AllInf[[i]]$vecm.tsDyn
+    
+    tab.irf <- genFEVD.VECM.boot.official(est, boot = TRUE, n.ahead = n.ahead, no.corr = F, ci = ci, runs =runs, seed = seed, band = "irf")
+    row.cny.irf[i,] <- tab.irf[locate.cny,]
+    
+    tab.lower <- genFEVD.VECM.boot.official(est, boot = TRUE, n.ahead = n.ahead, no.corr = F, ci = ci, runs =runs, seed = seed, band = "lower")
+    row.cny.lower[i,] <- tab.lower[locate.cny,]
+    
+    tab.upper <- genFEVD.VECM.boot.official(est, boot = TRUE, n.ahead = n.ahead, no.corr = F, ci = ci, runs =runs, seed = seed, band = "upper")
+    row.cny.upper[i,] <- tab.upper[locate.cny,]
+    #print(i)
+    setTxtProgressBar(pb, i)
+    return.list <- rbind(row.cny.irf[1,],row.cny.lower[1,],row.cny.upper[1,])
+    colnames(return.list) <- group
+    rownames(return.list) <- c("irf","lower","upper")
+    return(return.list)
+  }
   if(mode == "fix"){
     for (i in 1:(n-span)) {
       AllInf[[i]] <- process.genFEVD.VECMorVAR(data[c(i:(i+span-1)),], group, start.point = "NULL", end.point = "NULL", n.ahead)
@@ -511,7 +539,7 @@ dy.VECM.FEVD <- function(data, group, n.ahead, mode, span, keep.vecm, rank){
 #################################################################
 dy.VECM.GIR <- function(data, group, n.ahead, mode, span, keep.vecm =FALSE,
                         rank = NULL#NULL or numberic
-){
+                        ){
   n.ahead <- n.ahead + 1
   tic()
   n <- nrow(data)
@@ -578,46 +606,49 @@ dy.VECM.GIR <- function(data, group, n.ahead, mode, span, keep.vecm =FALSE,
 #################################################################
 # dygraph
 #################################################################
-dygraph.NewRMB <- function(dy.data,dy.main,color){
+dygraph.NewRMB <- function(dy.data,dy.main,color,label.dyAxis,width.dyLegend){
+  if(missing(label.dyAxis)){label.dyAxis <- " "}
+  if(missing(width.dyLegend)){width.dyLegend <- 1500}
+  
   #color <- c("black","gray",colorRampPalette(c("red", "white"))(5)[-5], colorRampPalette(c("blue", "white"))(5)[-5], colorRampPalette(c("green", "white"))(5)[-5])
   #color <- c(RColorBrewer::brewer.pal(9, "Set1"),RColorBrewer::brewer.pal(8, "Set2"),RColorBrewer::brewer.pal(12, "Set3"))
   dygraph(data = dy.data, main = dy.main) %>%
     dyRangeSelector(dateWindow = c("2011-10-20", "2017-12-31"), height = 20)  %>%
     
-    dyAxis("y", label = " ") %>%#valueRange = 
+    dyAxis("y", label = label.dyAxis) %>%#valueRange = 
     dyOptions(axisLineWidth = 1.5, axisLineColor = "black", gridLineColor = "lightblue", colors = color, strokeWidth = 2) %>%
-    dyLegend(show = "auto", hideOnMouseOut = TRUE, width = 800, labelsSeparateLines = FALSE) %>%
+    dyLegend(show = "auto", hideOnMouseOut = TRUE, width = width.dyLegend, labelsSeparateLines = FALSE) %>%
     dyHighlight(highlightCircleSize = 4, 
                 highlightSeriesBackgroundAlpha = 0.7,
                 hideOnMouseOut = TRUE,
                 highlightSeriesOpts = list(strokeWidth = 2.5)) %>%
     
-    dyEvent("2008-9-14", "2008.9.14:雷曼兄弟破产", labelLoc = "top") %>%
-    dyEvent("2008-11-25", "2008.11.25:美国量化宽松Q1", labelLoc = "top") %>%
-    dyEvent("2010-6-19", "2010.6.19:增强人民币汇率弹性", labelLoc = "top") %>%
-    dyEvent("2010-11-4", "2010.11.4:美国量化宽松Q2", labelLoc = "top") %>%
-    dyEvent("2012-4-16", "2012.4.16:人民币汇率浮动区间从0.5%扩大到1%", labelLoc = "top") %>%
-    dyEvent("2012-5-29", "2012.5.29:发展人民币对日元直接交易", labelLoc = "top") %>%
-    dyEvent("2012-9-14", "2012.9.14:美国量化宽松Q3", labelLoc = "top") %>%
-    dyEvent("2012-12-7", "2012.12.7:《合格境外机构投资者境内证券投资外汇管理规定》", labelLoc = "top") %>%
-    dyEvent("2012-12-13", "2012.12.13:美国量化宽松Q4", labelLoc = "top") %>%
-    dyEvent("2014-1-21", "2014.1.21:《外债转贷款外汇管理规定》", labelLoc = "top") %>%
-    dyEvent("2014-2-18", "2014.2.18:上海自贸区启动人民币跨境支付业务", labelLoc = "top") %>%
-    dyEvent("2014-3-17", "2014.3.17:人民币汇率浮动区间由1%扩大到2%", labelLoc = "top") %>%
-    dyEvent("2014-5-19", "2014.5.19:《跨境担保外汇管理规定》", labelLoc = "top") %>%
-    #dyEvent("2015-1-26", "2015.1.26:进一步推进行政审批改革 完善保险业务外汇管理", labelLoc = "top") %>%
-    dyEvent("2015-8-11", "2015.8.11:811汇改", labelLoc = "top") %>%
-    dyEvent("2015-12-11", "2015.12.11:发布CFETS人民币汇率指数", labelLoc = "top") %>%
-    #dyEvent("2015-12-16", "2015.12.16:美联储加息", labelLoc = "top") %>%
-    dyEvent("2016-2-3", "2016.2.3:《合格境外机构投资者境内证券投资外汇管理规定》", labelLoc = "top") %>%
-    #dyEvent("2016-8-29", "2016.8.29: 关于人民币合格境外机构投资者境内证券投资管理有关问题的通知》", labelLoc = "top") %>%
-    #dyEvent("2016-10-1", "2016.10.1:RMB加入SDR", labelLoc = "top") %>%
-    dyEvent("2016-12-29", "2016.12.9:调整CFETS指数货币篮子", labelLoc = "top") %>%
-    dyEvent("2017-1-24", "2017.1.24:中国央行时隔六年首次提升MLF政策利率10个基点", labelLoc = "top") %>%
+    dyEvent("2008-9-14", "2008.9.14:雷曼兄弟破产    ", labelLoc = "top") %>%
+    dyEvent("2008-11-25", "2008.11.25:美国量化宽松Q1    ", labelLoc = "top") %>%
+    dyEvent("2010-6-19", "2010.6.19:增强人民币汇率弹性    ", labelLoc = "top") %>%
+    dyEvent("2010-11-4", "2010.11.4:美国量化宽松Q2    ", labelLoc = "top") %>%
+    dyEvent("2012-4-16", "2012.4.16:人民币汇率浮动区间从0.5%扩大到1%    ", labelLoc = "top") %>%
+    dyEvent("2012-5-29", "2012.5.29:发展人民币对日元直接交易    ", labelLoc = "top") %>%
+    dyEvent("2012-9-14", "2012.9.14:美国量化宽松Q3    ", labelLoc = "top") %>%
+    #dyEvent("2012-12-7", "2012.12.7:《合格境外机构投资者境内证券投资外汇管理规定》    ", labelLoc = "top") %>%
+    dyEvent("2012-12-13", "2012.12.13:美国量化宽松Q4    ", labelLoc = "top") %>%
+    #dyEvent("2014-1-21", "2014.1.21:《外债转贷款外汇管理规定》    ", labelLoc = "top") %>%
+    #dyEvent("2014-2-18", "2014.2.18:上海自贸区启动人民币跨境支付业务    ", labelLoc = "top") %>%
+    dyEvent("2014-3-17", "2014.3.17:人民币汇率浮动区间由1%扩大到2%    ", labelLoc = "top") %>%
+    #dyEvent("2014-5-19", "2014.5.19:《跨境担保外汇管理规定》    ", labelLoc = "top") %>%
+    #dyEvent("2015-1-26", "2015.1.26:进一步推进行政审批改革 完善保险业务外汇管理    ", labelLoc = "top") %>%
+    dyEvent("2015-8-11", "2015.8.11:811汇改    ", labelLoc = "top") %>%
+    dyEvent("2015-12-11", "2015.12.11:发布CFETS人民币汇率指数    ", labelLoc = "top") %>%
+    #dyEvent("2015-12-16", "2015.12.16:美联储加息    ", labelLoc = "top") %>%
+    #dyEvent("2016-2-3", "2016.2.3:《合格境外机构投资者境内证券投资外汇管理规定》    ", labelLoc = "top") %>%
+    #dyEvent("2016-8-29", "2016.8.29: 关于人民币合格境外机构投资者境内证券投资管理有关问题的通知》    ", labelLoc = "top") %>%
+    #dyEvent("2016-10-1", "2016.10.1:RMB加入SDR    ", labelLoc = "top") %>%
+    dyEvent("2016-12-29", "2016.12.9:调整CFETS指数货币篮子    ", labelLoc = "top") %>%
+    #dyEvent("2017-1-24", "2017.1.24:中国央行时隔六年首次提升MLF政策利率10个基点    ", labelLoc = "top") %>%
     #dyEvent("2017-3-15", "2017.3.15:美联储宣布加息25个基点", labelLoc = "top") %>%
-    dyEvent("2017-3-20", "2017.3.20:香港交易所推出人民币货币期权", labelLoc = "top") %>%
-    dyEvent("2017-5-26", "2017.5.26:逆周期因子", labelLoc = "top") %>%
-    dyEvent("2017-9-11", "2017.9.11:外汇准备金率从20%调整为0", labelLoc = "top")
+    dyEvent("2017-3-20", "2017.3.20:香港交易所推出人民币货币期权    ", labelLoc = "top") %>%
+    dyEvent("2017-5-26", "2017.5.26:逆周期因子    ", labelLoc = "top") %>%
+    dyEvent("2017-9-11", "2017.9.11:外汇准备金率从20%调整为0    ", labelLoc = "top")
   }
 #################################################################
 # dygraph
@@ -760,7 +791,11 @@ significance <- function(x){
 #################################################################
 # Parameter Estimation Results for the Vector Error Correction Model
 #################################################################
-table.parameter <- function(model, tab.label){
+table.parameter <- function(model, tab.label, call.euqation,digits,type.export){
+  if(missing(call.euqation)){call.euqation <- FALSE}
+  if(missing(digits)){digits <- 2}
+  if(missing(type.export)){type.export <- F}
+  
   process.vecm <- model
   rank <- process.vecm$rank
   vecm <- process.vecm$vecm.tsDyn
@@ -773,7 +808,7 @@ table.parameter <- function(model, tab.label){
   coef_sgnf <- data.frame(matrix(NA, (rank+1), length(group)))
   for (i in 1:(rank+1)){
     for (j in 1:length(group)) {
-      temp <- sprintf("%.3f", round(pvalue.vecm[i,j],3))
+      temp <- format(round(coef.vecm[i,j], digits=digits), nsmall = digits)
       coef_sgnf[i,j] <- paste0(temp, sgnf[i,j])
     }
   }
@@ -781,35 +816,97 @@ table.parameter <- function(model, tab.label){
   rownames(coef_sgnf) <- c(paste0("alpha",c(1:(rank))),"constant") 
   coef_sgnf <- rbind(coef_sgnf[(rank+1),], coef_sgnf)[-(rank+2),]
   
-  beta <- coefB(vecm, normalize = TRUE) %>% t
-  for (i in 1:(rank)){
-    for (j in 1:length(group)) {
-      beta[i,j] <- sprintf("%.3f", round(as.numeric(beta[i,j]),3))
+  if(call.euqation == F){
+    beta <- coefB(vecm, normalize = TRUE) %>% t
+    #beta[abs(beta)<0.000001] <- ""
+    beta <- format(round(beta, digits=digits), nsmall = digits)
+    
+    colnames(beta) <- group
+    rownames(beta) <- paste0("CI",c(1:(rank)))
+    tab <- rbind(coef_sgnf, beta)
+    tab <- xtable(tab,
+                  caption = paste("Parameter Estimation Results for the Vector Error Correction Model", tab.label, sep = " "),
+                  label = paste0("tab:parameter.", tab.label)
+    )
+    #require(knitr)
+    align(tab) <- paste0(rep("l",length(group)+1), collapse = "")
+    addtorow <- list(pos = list(0,0),
+                     command = c("& &   &\\multicolumn{4}{c}{$CNH\\_DF$} & \\multicolumn{4}{c}{$CNY\\_NDF$}& \\multicolumn{4}{c}{$CNY\\_DF$}\\\\\n",
+                                 "& $CNYS$ &  $CNHS$ & 1M & 3M & 6M & 1Y & 1M & 3M & 6M & 1Y & 1M & 3M & 6M & 1Y\\\\\n")) 
+    print(tab, 
+          file = paste0("latex/table/parameter.",tab.label,".tex"),
+          sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+          caption.placement = "top",
+          comment = "TRUE",
+          include.rownames = TRUE,
+          include.colnames = FALSE,
+          add.to.row = addtorow,
+          floating = TRUE, 
+          floating.environment = "sidewaystable",
+          type = "latex"
+    )
+  }
+  if(call.euqation == T){
+    ci.vector <- data.frame(matrix(NA, rank, length(group)))
+    beta <- coefB(vecm, normalize = TRUE) %>% t
+    beta[beta<0.00001] <-0
+    temp.euqation <- c()
+    c.beta <- format(round(beta, digits=digits), nsmall = digits)
+    for (i in 1:(rank)){
+      temp.euqation <- c()
+      for (j in 1:length(group)) {
+        if(beta[i,j]!=0){
+          if(j == i){
+            temp.euqation <- paste0(temp.euqation, group[j])    
+          }
+          if(j > 1){
+            if(beta[i,j]==1){
+              temp.euqation <- paste0(temp.euqation, "+", group[j])  
+            }else{
+              temp.euqation <- paste0(temp.euqation, "+",c.beta[i,j], "*", group[j])  
+            }
+          }
+        }
+      }
+      ci.vector[i,1] <- temp.euqation
+    }
+    colnames(ci.vector) <- group
+    rownames(ci.vector) <- paste0("CI",c(1:(rank)))
+    
+    if(type.export == "xlsx"){
+      tab <- rbind(coef_sgnf, ci.vector)
+      write.xlsx(tab, file = paste0("latex/table/parameter.",tab.label,".xlsx"), row.names = TRUE)}
+    if(0){#type.export == "latex"
+      tab <- coef_sgnf
+      tab <- xtable(tab,
+                    caption = paste("Parameter Estimation Results for the Vector Error Correction Model", tab.label, sep = " "),
+                    label = paste0("tab:parameter.", tab.label)
+      )
+      #require(knitr)
+      align(tab) <- paste0(rep("l",length(group)+1), collapse = "")
+      addtorow <- list()
+      addtorow$pos <- list(0,0,5,5,5,5)
+      addtorow$command  <-c("& &   &\\multicolumn{4}{c}{$CNH\\_DF$} & \\multicolumn{4}{c}{$CNY\\_NDF$}& \\multicolumn{4}{c}{$CNY\\_DF$}\\\\\n",
+                            "& $CNYS$ &  $CNHS$ & 1M & 3M & 6M & 1Y & 1M & 3M & 6M & 1Y & 1M & 3M & 6M & 1Y\\\\\n")
+for (i in 1:rank) {
+  addtorow$command <- c(addtorow$command,paste0("&&\\multicolumn{14}{l}{",ci.vector[i,1],"}\\\\\n"))
+}
+      print(tab, 
+            file = paste0("latex/table/parameter.",tab.label,".tex"),
+            sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+            caption.placement = "top",
+            comment = "TRUE",
+            include.rownames = TRUE,
+            include.colnames = FALSE,
+            add.to.row = addtorow,
+            floating = TRUE, 
+            floating.environment = "sidewaystable",
+            type = "latex"
+      )
     }
   }
-  colnames(beta) <- group
-  rownames(beta) <- paste0("CI",c(1:(rank)))
-  
-  tab <- rbind(coef_sgnf, beta)
-  tab <- xtable(tab,
-                caption = paste("Parameter Estimation Results for the Vector Error Correction Model", tab.label, sep = " "),
-                label = paste0("tab:parameter.", tab.label)
-  )
-  align(tab) <- "lllllllllllllll"#paste0(rep("l",7), collapse = "")
-  addtorow <- list(pos = list(0,0),
-                   command = c("& &   &\\multicolumn{4}{c}{$CNH\\_DF$} & \\multicolumn{4}{c}{$CNY\\_NDF$}& \\multicolumn{4}{c}{$CNY\\_DF$}\\\\\n",
-                               "& $CNYS$ &  $CNHS$ & 1M & 3M & 6M & 1Y & 1M & 3M & 6M & 1Y & 1M & 3M & 6M & 1Y\\\\\n")) 
-  print(tab, 
-        file = paste0("latex/table/parameter.",tab.label,".tex"),
-        sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
-        caption.placement = "top",
-        comment = "TRUE",
-        include.rownames = TRUE,
-        include.colnames = FALSE,
-        add.to.row = addtorow,
-        floating = TRUE, 
-        floating.environment = "sidewaystable"
-  )
+
+
   return(tab)
 }
 #################################################################
@@ -887,7 +984,7 @@ for (i in 1:table.n) {
 table.COINtest.xlsx[is.na(table.COINtest.xlsx)] <- ""
 write.xlsx(table.COINtest.xlsx, file = paste0("latex/excel/COINtest", tab.label,".xlsx"), row.names = TRUE)
 }
-####################################################################
+#################################################################
 #convert vecm to var of in library tsDyn
 #################################################################
 vec2var.tsDyn <- function(x){
@@ -957,3 +1054,126 @@ vec2var.tsDyn <- function(x){
   return(result)   
   
 }
+#################################################################
+#convert vecm to var of in library tsDyn
+#################################################################
+tab.boot.fevd <- function(tab,digits=1){
+  tab <- tab * 100
+  tab[c("lower","upper"),] <- apply(tab[c("lower","upper"),], MARGIN = 2, sort)
+  tab <- format(round(tab, digits=digits), nsmall = digits)
+  tab <- rbind(tab,paste0("(",tab["lower",],",",tab["upper",],")"))
+  rownames(tab)[4]<-"ci"
+  return.list <- tab[c(1,4),]
+  return(return.list )
+}
+#################################################################
+# export.boot.tab
+#################################################################
+export.boot.tab <- function(data, v.horizon, tab.label, title, rans = 100, digits =2){
+  l.boot.fevd <- list()
+  l.ci.fevd <- list()
+  Horizon <- c()
+  for (i in 1:length(v.horizon)) {
+    n.ahead <- v.horizon[i]
+    l.boot.fevd[[i]] <- dyFEVD.cny.boot.official(data, group, ci = 0.01, seed = 99, runs=runs, mode = "yearly", n.ahead=n.ahead)
+    l.ci.fevd[[i]] <- tab.boot.fevd(l.boot.fevd[[i]], digits = digits)
+    Horizon <- c(Horizon,v.horizon[i],"")
+    print(i)
+  }
+  require(abind)
+  tab.ci.fevd <- abind(l.ci.fevd,along=1)
+  tab.ci.fevd <- cbind(Horizon, tab.ci.fevd)
+  rownames(tab.ci.fevd) <- NULL
+  
+  #excel
+  write.xlsx(tab.ci.fevd, file = paste0("latex/excel/boot.",tab.label,".xlsx"), row.names = F)
+  title <- "test"
+  tab.ci.fevd <- xtable(tab.ci.fevd, caption = title,
+                        label = paste0("tab:",tab.label))
+  align(tab.ci.fevd) <- paste0(rep("c",dim(tab.ci.fevd)[2]+1), collapse = "")
+  addtorow <- list(pos = list(0,0),
+                   command = c("Horizon& &   &\\multicolumn{4}{c}{$CNH\\_DF$} & \\multicolumn{4}{c}{$CNY\\_NDF$}& \\multicolumn{4}{c}{$CNY\\_DF$}\\\\\n",
+                               "& $CNYS$ &  $CNHS$ & 1M & 3M & 6M & 1Y & 1M & 3M & 6M & 1Y & 1M & 3M & 6M & 1Y\\\\\n")) 
+  print(tab.ci.fevd, 
+        file = paste0("latex/table/boot.",tab.label,".tex"), 
+        sanitize.text.function = function(str) gsub("_", "\\_", str, fixed = TRUE),
+        caption.placement = "top",
+        comment = "TRUE",
+        floating = TRUE, 
+        floating.environment = "sidewaystable",
+        include.rownames=FALSE,
+        include.colnames=FALSE,
+        add.to.row = addtorow
+  )
+}
+#################################################################
+# export.boot.tab
+#################################################################
+vec2var.tsDyn <- function(x){
+  
+  model <- if(inherits(x,"VECM")) "VECM" else "VAR"
+  co <- coef(x)
+  lag <- ifelse(model=="VECM",x$lag+1, x$lag)
+  K <- x$k
+  include <- x$include
+  
+  ## VECM case: 
+  if(model=="VECM"){
+    LRinclude <- x$model.specific$LRinclude
+    if(LRinclude!="none"){
+      if(LRinclude=="const"){
+        include <- "const"
+      } else if(LRinclude=="trend"){
+        include <- if(include=="const") "both" else "trend"
+      } else if(LRinclude=="both"){
+        include <- "both"
+      }
+    }
+  }
+  
+  ## Take vec2var representation for VECMs
+  if(model=="VECM") {
+    co <- VARrep(x)
+  }
+  rownames(co) <- gsub("Equation ", "", rownames(co))
+  colnames(co) <- gsub(" -([0-9]+)","\\.l\\1", colnames(co))
+  colnames(co) <- gsub("Intercept","constant", colnames(co))
+  
+  ## detcoeffs
+  detcoeffs <- co[,grep("constant|Trend", colnames(co)), drop=FALSE]
+  
+  ## A
+  A <- list()
+  for(i in 1:lag) A[[i]] <- co[,grep(paste("\\.l", i, sep=""), colnames(co)), drop=FALSE]
+  names(A) <- paste("A", 1:lag, sep="")
+  
+  ## Rank
+  rank <- if(model=="VECM") x$model.specific$r else K
+  
+  ## vecm
+  ecdet <- if(model=="VECM") x$model.specific$LRinclude else "none"
+  aChar <- "fakeChar"
+  vecm<- new("ca.jo", season = NULL, dumvar=NULL, ecdet=ecdet,lag=as.integer(lag),spec="transitory", lambda=aChar)
+  
+  ## datamat
+  if(model=="VAR"){
+    datamat <- as.matrix(tail(as.data.frame(x$model),-lag))
+  } else {
+    newx <- lineVar(x$model[,1:K], lag=lag, include=include)
+    datamat <- as.matrix(tail(as.data.frame(newx$model),-lag))
+  }
+  colnames(datamat) <- gsub(" -([0-9]+)","\\.l\\1", colnames(datamat))
+  colnames(datamat) <- gsub("Intercept","constant", colnames(datamat))
+  
+  ## residuals
+  resids <- residuals(x)
+  colnames(resids) <- paste("resids of", colnames(resids))
+  ## Return:
+  result <- list(deterministic = detcoeffs, A = A, p = lag, K = K, y = as.matrix(x$model[,1:x$k]), obs = x$t, totobs = 
+                   x$T, call = match.call(), vecm = vecm, datamat = datamat, resid = resids, r = rank)
+  
+  class(result) <- "vec2var"
+  return(result)   
+  
+}
+

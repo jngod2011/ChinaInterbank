@@ -12,9 +12,7 @@ deleteNAcols <- function(x){
 #################################################################
 # Interpolation too slow
 #################################################################
-Interpolation <- function(x)
-{
-  
+Interpolation <- function(x){
   y <- c()#给最终输出值分配内存空间
   z <- as.numeric(is.na(x))#建立中间变量z
   MaxContinuousOnes <- sum(z)#最大可能有多少个NA
@@ -67,7 +65,6 @@ last_list <- function(x = list()){
   y <- as.character(y)
   return(y)
 }
-
 #################################################################
 # multijion together
 #################################################################
@@ -83,12 +80,11 @@ multijion <- function(data = list(), ...){
   }
   return(jiondata)
 }
-
 #################################################################
 ## Generalised impulse response 
 #################################################################
-irf_generalised <- function(model, n.ahead) 
-{
+irf_generalised <- function(model, n.ahead) {
+  
   if (is.na(match(class(model),c("varest","vec2var")))) {
     return("The model class is not varest and vec2var!")
   }
@@ -102,7 +98,6 @@ irf_generalised <- function(model, n.ahead)
   }
   return(gi)
 }
-
 #################################################################
 ##weighted_gir
 #################################################################
@@ -120,7 +115,6 @@ weighted_gir <- function(GIR, divided)
   names(return.result) <- c("net_average", "to_average", "from_average", "weighted.matrix")
   return(return.result)
 }
-
 #################################################################
 ##index.spill
 #################################################################
