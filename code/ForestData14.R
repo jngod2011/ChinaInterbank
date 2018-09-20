@@ -80,6 +80,7 @@ g.sp <- as.data.frame(lapply(sp[,-1], log_GrowthRate))
 sp <- xts(sp[,-1], as.Date(sp$Date, format='%Y-%m-%d'))["2008-01-01/"]
 g.sp <- xts(g.sp, as.Date(index(sp)[-1], format='%Y-%m-%d'))
 names(g.sp) <- paste0(names(g.sp),".g")
+save(sp,g.sp,file = "data/Rdata/latex_sp_ForestDate14.Rdata")
 #################################################################
 #shibor
 #################################################################

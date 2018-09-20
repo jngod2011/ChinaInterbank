@@ -140,7 +140,7 @@ aenet.fix <- function(data, start.point = "NULL", end.point = "NULL", fix){
       temp.x <- data.aenet[-1,-i] %>% as.matrix
       temp.y <- stats::lag(data.aenet[,i],1)[-1,]
       require(forecast)
-      if(is.constant(temp.y)){temp.y <- temp.y+rnorm(fix, mean = 0, sd = 0.000001)}
+      if(is.constant(temp.y)){temp.y <- temp.y+rnorm(length(temp.y), mean = 0, sd = 0.0000000001)}
       aenet.fit <- aenet(
         x = temp.x, y = temp.y,lower.limits = 0,family = "gaussian",
         alphas = 0.5, seed = 1,init = "enet",tune = "aic"#tune = "cv",rule = "lambda.min", nfolds = 10
@@ -395,3 +395,123 @@ aenet.dygraph <- function(x,title){
     dyAxis("y2", label = "Crisis" ,independentTicks = TRUE, drawGrid = F) %>%
     dySeries("Crisis", label = "Crisis", color = "black", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
 }
+#################################################################
+#aenet.corrplot
+#################################################################
+aenet.corrplot <- function(data,bond,start,end,max,type,head,linkcolor, standard,height.width,charge,replace.group){
+  if(missing(linkcolor)){linkcolor <- "gray"}
+  if(missing(bond)){bond <- NULL}
+  if(missing(type)){type <- NULL}
+  if(missing(standard)){standard <- F}
+  if(missing(height.width)){height.width <- 600}
+  if(missing(charge)){charge <- -100}
+  if(missing(replace.group)){replace.group <- "Banks"}
+  
+  n.bank <- dim(data)[[2]]
+  data <- merge(data,bond) %>% na.omit
+  period <- paste0(start,"/",end)
+  data <- data[period]
+  aenet.myl <- aenet.fix(data = data, fix = "yearly", start.point = "NULL",end.point = "NULL")$Coef[[1]] %>% as.matrix
+  aenet.myl <- replaceNA0(aenet.myl)[1:n.bank,1:n.bank]
+  rownames(aenet.myl)<-colnames(aenet.myl) <- names(data)[1:n.bank]
+  if(!is.null(max)){
+    file.path <- paste0(head,"m",type,"-",start,"-",end,"-", max,".jpg")}else{
+    file.path <- paste0(head,"m",type,"-",start,"-",end,".jpg")
+  }
+  
+  jpeg(file=file.path)
+  if(missing(max) | is.null(max)){max <- max(aenet.myl)}
+  
+  corrplot(aenet.myl, p.mat = NULL, insig = "blank",
+           method = "square",
+           #type = "lower",
+           tl.col = "black", tl.srt = 90,
+           diag = FALSE,
+           cl.lim = c(0, max),#order = "hclust", addrect = 2,
+           col = rainbow(20),
+           is.corr = FALSE,
+           title = paste0(type,":",period),
+           mar=c(0,0,1,0)
+  )
+  dev.off()
+  #dev.new() 
+  
+  #
+  temp <- aenet.myl
+  temp <- temp %>% t
+  max.temp <- max(temp)
+  if(standard){temp <- temp/max.temp}
+  igraph.matrix <- graph_from_adjacency_matrix(temp, mode = c("directed"), weighted = TRUE, diag = FALSE)
+  networkD3.matrix <- igraph_to_networkD3(igraph.matrix)
+  networkD3.matrix[[2]]$group <- group.bid$Eclass[locate] %>% as.character
+  networkD3.matrix[[2]]$group <- factor(networkD3.matrix[[2]]$group, order = TRUE, levels = c("State-Owned Banks","Joint-Equity Commercial Banks","Urban Commercial Banks", "Rural Commercial Banks","Foreign Capital Bank"))
+  networkD3.matrix[[2]]$size <- rowSums(temp)#-colSums(temp)
+  networkD3.matrix[[2]]$size <- networkD3.matrix[[2]]$size
+  #networkD3.matrix[[2]]$name <- paste0("_",networkD3.matrix[[2]]$name)
+  
+  no.remove <- (c(networkD3.matrix[[1]]$source,networkD3.matrix[[1]]$target) %>% unique)+1
+  remove <- which(is.na(match(c(1:dim(aenet.myl)[2]),no.remove)))
+  networkD3.matrix[[2]]$name[remove] <- NA
+  
+  if(1){
+    networkD3.matrix[[2]]$group <- replace.group
+    ColourScale <- 'd3.scaleOrdinal() .range(["black","white","white"]);'
+  }
+  
+  matrix.date <- data.frame(name="",size=0, group=paste0(type," : ",period))
+  networkD3.matrix[[2]] <- rbind(networkD3.matrix[[2]], matrix.date)
+  print.max.temp <- ifelse(max.temp<=0.0001,
+                           paste0("< 10^(",(log(max.temp,10) %>% round)+1,")")
+                           ,format(round(max.temp, digits = 4), nsmall = 4))
+  Maximum <- data.frame(name="",size=0, group=paste0("Maximum Edge Weight"," : ",print.max.temp))
+  networkD3.matrix[[2]] <- rbind(networkD3.matrix[[2]], Maximum)
+  
+  networkD3.matrix[[1]]$value <- networkD3.matrix[[1]]$valu
+  #ColourScale <- 'd3.scaleOrdinal() .range(["#B71C1C","#FF9800","#33691E","blue","white","white"]);'
+  n.link <- length(networkD3.matrix[[1]]$source)
+  linkcolor <- rep("gray",n.link)
+  nodeID <- match(c("CEB","CIB","ABC","ICBC"),colnames(temp))-1
+  for (i in 1:n.link) {
+    #CEB
+    if(networkD3.matrix[[1]]$source[i]==nodeID[1]){
+      linkcolor[i] <- "blue"
+      networkD3.matrix[[1]]$value[i]<-3
+    }
+    #CIB
+    if(networkD3.matrix[[1]]$source[i]==nodeID[2]){
+      linkcolor[i] <- "green"
+      networkD3.matrix[[1]]$value[i]<-3
+    }
+    #ABC
+    if(networkD3.matrix[[1]]$source[i]==nodeID[3]){
+      linkcolor[i] <- "#FFAD6D"
+      networkD3.matrix[[1]]$value[i]<-2
+    }
+    #ICBC
+    if(networkD3.matrix[[1]]$source[i]==nodeID[4]){
+      linkcolor[i] <- "#F86B4B"
+      networkD3.matrix[[1]]$value[i]<-2
+    }
+    
+  }
+  networkD3.matrix[[1]]$value<-2
+  networkD3.matrix[[1]] <- rbind(c(0,1,0),networkD3.matrix[[1]])
+  linkcolor <- c("white",linkcolor)
+  if(1){
+    rbokeh <- forceNetwork(Links = networkD3.matrix[[1]], Nodes = networkD3.matrix[[2]],
+                 Source = "source", Target = "target", Value = "value", 
+                 arrows = T, linkDistance = 200, linkWidth = JS("function(d) { return d.value; }"), linkColour = linkcolor,
+                 NodeID = "name", Nodesize = 'size', radiusCalculation = "d.nodesize", colourScale = JS(ColourScale),
+                 Group = "group", legend = T, fontSize = 15, opacity = 1, opacityNoHover = 1,
+                 height = height.width , width = height.width, bounded = F, zoom = T, charge = charge)
+
+    widget2png(rbokeh , file = paste0(head,"fn",type,"-",start,"-",end,".png"), timeout = 5000)
+  }
+  #
+  list.result <- list(aenet.myl,max.temp,period,networkD3.matrix[[1]],networkD3.matrix[[2]],linkcolor)
+  names(list.result) <- c("matrix","max","period","Links","Nodes","linkcolor")
+  return(list.result)
+}
+
+
+

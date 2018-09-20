@@ -200,7 +200,7 @@ load(file = "data/Rdata/latex_group.stockprice.Rdata")
 
 c.matrix <- list()
 for (i in 1:length(l.matrix)) {
-  c.matrix[[i]] <- l.matrix[[i]] + d.matrix[[i]]
+  c.matrix[[i]] <- d.matrix[[i]] #+ l.matrix[[i]]
 }
 max.matrix <- unlist(c.matrix) %>% max
 #
@@ -251,10 +251,10 @@ for (i in 1:length(wind.date)) {
                          Source = "source", Target = "target", Value = "value", 
                          arrows = T, linkDistance = JS("function(d){return 1 / d.value * 50}"), linkWidth = JS("function(d) { return d.value; }"), linkColour = "gray",
                          NodeID = "name", Nodesize = 'size', radiusCalculation = "d.nodesize", colourScale = JS(ColourScale),
-                         Group = "group", legend = T, fontSize = 0,
+                         Group = "group", legend = T, fontSize = 10,
                          opacity = 0.8, opacityNoHover = 1,
                          height = 700 , width = 700, bounded = F, zoom = T, charge = -100)
-  widget2png(rbokeh , file = paste0("latex/report/figure/Allinterbankt", wind.date[i], ".png"), timeout = 1200)
+  widget2png(rbokeh , file = paste0("latex/report/figure/AllinterbanktDeposit", wind.date[i], ".png"), timeout = 1200)
 }
 #################################################################
 # wind: desity and power law

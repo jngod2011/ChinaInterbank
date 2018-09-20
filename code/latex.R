@@ -95,7 +95,9 @@ shibor$Date<- substr(shibor$Date, 1, 10)
 ## term spread
 term.spread <- (7*shibor$`1Y` + 5*shibor$`9M` + 3*shibor$`6M` + shibor$`3M` - shibor$`1M` - 3*shibor$`2W` - 5*shibor$`1W`- 7*shibor$`O/N`)/28
 term.spread <- (shibor$`1Y` + shibor$`9M` + shibor$`6M` + shibor$`3M` - shibor$`1M` - shibor$`2W` - shibor$`1W`- shibor$`O/N`)/4
+
 data <- cbind(shibor[,-1], term.spread)
+
 names(data)[ncol(data)] <- "Term Spread"
 dy.data <- xts(data, as.Date(shibor$Date, format='%Y-%m-%d'))
 dy.main <- "Shanghai Interbank Offered Rate from 2006 to 2018"
@@ -105,7 +107,11 @@ dygraph.interbank(dy.data, dy.main, color) %>%
   dyAxis("y2", label = "Term Spread" ,independentTicks = TRUE, drawGrid = F) %>%
   dySeries("Term Spread", label = "Term Spread", color = "black", strokeWidth = 0.2, fillGraph = 0.5,axis = "y2")
 
-
+data <- term.spread
+dy.data <- xts(data, as.Date(shibor$Date, format='%Y-%m-%d'))
+names(dy.data) <- "Term Spread"
+dygraph.interbank(dy.data,dy.main,color="red") %>% 
+  dySeries("Term Spread", label = "Term Spread", color = "red", strokeWidth = 0.2, fillGraph = 1,axis = "y")
 ## shibor: is shorter rae higher than the longer one?
 is.higher <- shibor
 is.higher[,c(2:dim(shibor)[2])] <- 0
@@ -393,7 +399,7 @@ wind <- wind[,selected.wind]
 temp.corr <- corstar(wind)[-seq(2,length(selected.wind)*2,2),-1]
 rownames(temp.corr) <- colnames(temp.corr)
 temp.corr[upper.tri(temp.corr)] <- ""
-diag(temp.corr) <- ""
+diag(temp.corr) <- "1"
 
 correlation.table <- xtable(temp.corr, caption = "Correlation Matrix of Key Indicators",
                        label = "tab:correlation_table"

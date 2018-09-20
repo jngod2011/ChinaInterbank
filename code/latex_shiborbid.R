@@ -9,6 +9,7 @@ bond <- read_excel(path = "data/bond/Chinabond.xlsx",
 names(bond) <- c("Date","TRCHZ12", "TRCHZ15", "TRCHZ20", "TRCHZ25", "TRCHZ2Y", "TRCHZ30", "TRCHZ3Y", "TRCHZ4Y", "TRCHZ5Y", "TRCHZ6Y", "TRCHZ7Y", "TRCHZ8Y", "TRCHZ9Y", "TRCHZ10", "TRCHZ1Y")
 bond$Date <- substr(bond$Date, 1, 10)
 bond <- xts(bond[,-1], as.Date(bond$Date, format='%Y-%m-%d'));
+save(bond,file = "data/Rdata/latex_bond.Rdata")
 #################################################################
 # load shibor bid
 #################################################################
@@ -215,6 +216,15 @@ for (t in 1:13) {
   temp.data <- temp.data[,temp.group.bid$Abbr]
   raw.shibor.bid.W2[[t]] <- temp.data
   
+  temp.data <- raw.shibor.bid.M1[[t]]
+  id <- match(names(temp.data),group.bid$Cname)
+  temp.group.bid <- group.bid[id,]
+  names(temp.data) <- temp.group.bid$Abbr
+  o <- order(temp.group.bid[,"Eclass"], temp.group.bid[,"Abbr"])
+  temp.group.bid <- temp.group.bid[o,]
+  temp.data <- temp.data[,temp.group.bid$Abbr]
+  raw.shibor.bid.M1[[t]] <- temp.data
+  
   temp.data <- raw.shibor.bid.M3[[t]]
   id <- match(names(temp.data),group.bid$Cname)
   temp.group.bid <- group.bid[id,]
@@ -344,7 +354,7 @@ group.bid <- read_excel(path = "data/GroupBidFull.xlsx",
                         sheet = "group",
                         skip = 0,
                         col_names = T,
-                        col_types = c(rep("text", 6))) %>% as.data.frame
+                        col_types = c(rep("text", 7))) %>% as.data.frame
 group.bid$Eclass <- factor(group.bid$Eclass, order = TRUE, levels = c("State-Owned Banks","Joint-Equity Commercial Banks","Urban Commercial Banks","Foreign Capital Bank"))
 group.bid <- group.bid[order(group.bid$Eclass,decreasing = F),] 
 rownames(group.bid) <- group.bid$Abbr
